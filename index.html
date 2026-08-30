@@ -1,0 +1,3184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1F3D2E">
+<title>Ecliptic — plan your landscape around the sun</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,300;6..72,400;6..72,500&family=Inter+Tight:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<style>
+:root{
+  --forest:#1F3D2E; --forest-d:#16291F; --charcoal:#191C1A;
+  --paper:#FAF8F4; --sand:#EFE9DE; --line:#DED7C9; --line-soft:#EAE4D8;
+  --gold:#B8842A; --amber:#E3A63C; --amber-soft:#F6E7C8;
+  --muted:#6E7570; --muted-l:#9AA09A;
+  --sheet-h: 46vh;
+  --ease: cubic-bezier(.2,.7,.3,1);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overscroll-behavior:none}
+body{
+  background:var(--paper); color:var(--charcoal);
+  font:400 16px/1.5 "Inter Tight",system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+h1,h2,h3{margin:0;font-weight:400}
+button{font:inherit;color:inherit;background:none;border:none;padding:0;cursor:pointer}
+input,select{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:2px}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
+.serif{font-family:Newsreader,Georgia,serif}
+.hide{display:none!important}
+
+/* ---------------- LANDING ---------------- */
+#landing{position:fixed;inset:0;overflow-y:auto;background:var(--paper);z-index:40}
+.mark{display:flex;align-items:center;gap:9px;padding:20px 22px}
+.mark .glyph{width:17px;height:17px;flex:none}
+.mark span{font-family:"IBM Plex Mono",monospace;font-size:.78rem;letter-spacing:.24em;font-weight:500}
+.hero{padding:6vh 22px 40px;max-width:1140px;margin:0 auto;display:grid;gap:40px}
+@media(min-width:900px){.hero{grid-template-columns:1fr 1fr;align-items:center;gap:64px;padding-top:4vh}}
+.hero h1{font-family:Newsreader,serif;font-weight:300;font-size:clamp(2.7rem,8.5vw,4.4rem);line-height:1.02;letter-spacing:-.022em}
+.hero h1 em{font-style:italic;color:var(--forest)}
+.hero .lede{margin:20px 0 0;max-width:44ch;color:var(--muted);font-size:1.03rem;line-height:1.62}
+.search{margin-top:32px;max-width:460px}
+.search label{display:block;margin-bottom:9px;color:var(--muted)}
+.searchbox{display:flex;border:1px solid var(--line);border-radius:2px;background:#fff;overflow:hidden;transition:border-color .2s}
+.searchbox:focus-within{border-color:var(--forest)}
+.searchbox input{flex:1;min-width:0;border:none;background:none;padding:17px 16px;font-size:1rem;outline:none}
+.searchbox button{padding:0 20px;background:var(--forest);color:#fff;font-size:.88rem;font-weight:500;letter-spacing:.01em;white-space:nowrap;transition:background .18s}
+.searchbox button:hover{background:var(--forest-d)}
+.hint{margin-top:11px;color:var(--muted-l);font-size:.84rem;min-height:1.2em}
+.hint.bad{color:#9C3B2E}
+.suggest{margin-top:8px;border:1px solid var(--line-soft);background:#fff;border-radius:2px;max-height:220px;overflow-y:auto}
+.suggest div{padding:12px 14px;font-size:.9rem;border-bottom:1px solid var(--line-soft);cursor:pointer;line-height:1.35}
+.suggest div:last-child{border-bottom:none}
+.suggest div:hover{background:var(--sand)}
+
+/* hero demo */
+.demo{border:1px solid var(--line);background:#fff;border-radius:3px;overflow:hidden}
+.demo .stage{position:relative;aspect-ratio:4/3;background:var(--sand)}
+.demo svg{position:absolute;inset:0;width:100%;height:100%}
+.demo .bar{display:flex;align-items:center;gap:14px;padding:13px 16px;border-top:1px solid var(--line-soft)}
+.demo .bar .t{flex:none;color:var(--muted)}
+.demo .bar input{flex:1;accent-color:var(--gold);min-width:0}
+.demo .cap{position:absolute;left:14px;top:14px;background:rgba(250,248,244,.93);border:1px solid var(--line-soft);padding:8px 11px;border-radius:2px;line-height:1.45}
+.demo .cap b{display:block;font-family:Newsreader,serif;font-size:1.28rem;font-weight:400;letter-spacing:-.01em}
+
+/* landing sections */
+.strip{border-top:1px solid var(--line);padding:64px 22px;max-width:1140px;margin:0 auto}
+.strip h2{font-family:Newsreader,serif;font-weight:300;font-size:clamp(1.8rem,5vw,2.6rem);line-height:1.1;letter-spacing:-.018em;max-width:20ch}
+.strip p{color:var(--muted);max-width:52ch;margin:16px 0 0;line-height:1.65}
+.three{display:grid;gap:28px;margin-top:38px}
+@media(min-width:760px){.three{grid-template-columns:repeat(3,1fr);gap:34px}}
+.three .n{color:var(--gold)}
+.three h3{font-family:Newsreader,serif;font-size:1.3rem;margin:10px 0 7px;font-weight:400}
+.three p{font-size:.93rem;margin:0}
+.closer{background:var(--forest);color:var(--paper);padding:72px 22px;text-align:center}
+.closer h2{font-family:Newsreader,serif;font-weight:300;font-size:clamp(2rem,6vw,3rem);letter-spacing:-.02em;max-width:18ch;margin:0 auto}
+.closer button{margin-top:28px;background:var(--amber);color:var(--charcoal);padding:16px 30px;border-radius:2px;font-weight:500}
+footer.legal{padding:26px 22px 40px;color:var(--muted-l);font-size:.78rem;line-height:1.7;max-width:1140px;margin:0 auto;border-top:1px solid var(--line)}
+
+/* ---------------- LOADING ---------------- */
+#loading{position:fixed;inset:0;background:var(--paper);z-index:60;display:flex;align-items:center;justify-content:center;padding:24px}
+#loading .inner{width:100%;max-width:340px}
+#loading h2{font-family:Newsreader,serif;font-weight:300;font-size:1.9rem;letter-spacing:-.015em;margin-bottom:26px}
+.step{display:flex;align-items:center;gap:12px;padding:9px 0;color:var(--muted-l);font-size:.94rem;transition:color .3s}
+.step .tick{width:15px;height:15px;flex:none;border:1px solid var(--line);border-radius:50%;position:relative}
+.step.on{color:var(--charcoal)}
+.step.on .tick{border-color:var(--forest);background:var(--forest)}
+.step.on .tick::after{content:"";position:absolute;left:4px;top:2px;width:4px;height:8px;border:solid #fff;border-width:0 1.5px 1.5px 0;transform:rotate(42deg)}
+.step.now .tick{border-color:var(--amber);animation:pulse 1.1s infinite}
+@keyframes pulse{50%{background:var(--amber-soft)}}
+
+/* ---------------- WORKSPACE ---------------- */
+#work{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--sand)}
+.topbar{display:flex;align-items:center;gap:12px;padding:11px 14px;background:var(--paper);border-bottom:1px solid var(--line);z-index:20}
+.topbar .back{width:30px;height:30px;flex:none;display:grid;place-items:center;border:1px solid var(--line);border-radius:2px}
+.topbar .who{flex:1;min-width:0}
+.topbar .who b{display:block;font-weight:500;font-size:.92rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.topbar .who span{color:var(--muted-l);font-size:.76rem}
+.zonechip{flex:none;border:1px solid var(--line);border-radius:2px;padding:5px 9px;color:var(--muted)}
+#mapwrap{position:relative;flex:1;min-height:0}
+#map{position:absolute;inset:0;background:var(--sand)}
+.leaflet-container{font-family:"Inter Tight",sans-serif;background:var(--sand)}
+.mapctl{position:absolute;top:12px;right:12px;z-index:600;display:flex;flex-direction:column;gap:6px}
+.mapctl button{background:rgba(250,248,244,.95);border:1px solid var(--line);border-radius:2px;padding:8px 10px;color:var(--muted);backdrop-filter:blur(6px)}
+.mapctl button[aria-pressed=true]{background:var(--forest);border-color:var(--forest);color:var(--paper)}
+.compass{position:absolute;left:12px;top:12px;z-index:600;width:46px;height:46px;background:rgba(250,248,244,.93);border:1px solid var(--line);border-radius:50%;display:grid;place-items:center;backdrop-filter:blur(6px)}
+.suninfo{position:absolute;left:12px;bottom:12px;z-index:600;background:rgba(250,248,244,.95);border:1px solid var(--line);border-radius:2px;padding:9px 12px;backdrop-filter:blur(6px);line-height:1.5}
+.suninfo b{font-family:Newsreader,serif;font-size:1.1rem;font-weight:400}
+.locatebar{position:absolute;left:12px;right:12px;bottom:12px;z-index:900;background:rgba(250,248,244,.97);
+  border:1px solid var(--line);border-radius:3px;padding:14px 16px;backdrop-filter:blur(8px);
+  box-shadow:0 8px 28px rgba(25,28,26,.16);max-width:440px;margin:0 auto}
+.locatebar b{font-family:Newsreader,serif;font-size:1.15rem;font-weight:400;display:block;margin-top:3px;line-height:1.25}
+.placing{position:absolute;left:50%;transform:translateX(-50%);bottom:14px;z-index:700;background:var(--forest);color:var(--paper);padding:11px 18px;border-radius:2px;font-size:.9rem}
+
+/* bottom sheet */
+#sheet{background:var(--paper);border-top:1px solid var(--line);display:flex;flex-direction:column;
+  height:var(--sheet-h);max-height:72vh;transition:height .3s var(--ease);z-index:800;box-shadow:0 -14px 34px rgba(25,28,26,.07)}
+#sheet.big{height:82vh}
+#sheet.small{height:112px}
+.grab{padding:7px 0 3px;display:grid;place-items:center;cursor:grab;flex:none}
+.grab i{width:34px;height:3px;background:var(--line);border-radius:2px;display:block}
+.tabs{display:flex;border-bottom:1px solid var(--line-soft);flex:none;padding:0 6px}
+.tabs button{flex:1;padding:11px 2px 12px;font-size:.88rem;color:var(--muted-l);border-bottom:2px solid transparent;margin-bottom:-1px;transition:color .18s}
+.tabs button[aria-selected=true]{color:var(--forest);border-bottom-color:var(--forest)}
+.sheetbody{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 18px 60px}
+@media(min-width:900px){
+  #work{flex-direction:row;flex-wrap:wrap}
+  .topbar{width:100%}
+  #mapwrap{flex:1 1 auto;height:auto}
+  #sheet{width:430px;height:auto!important;max-height:none;border-top:none;border-left:1px solid var(--line);box-shadow:none}
+  .grab{display:none}
+}
+
+/* sheet content bits */
+.eyebrow{color:var(--muted-l);margin-bottom:12px}
+.big-num{font-family:Newsreader,serif;font-size:2.5rem;font-weight:300;line-height:1;letter-spacing:-.02em}
+.rowline{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:11px 0;border-bottom:1px solid var(--line-soft)}
+.rowline:last-child{border-bottom:none}
+.rowline .k{color:var(--muted);font-size:.9rem}
+.rowline .v{font-weight:500;font-size:.94rem;text-align:right}
+.slab{border:1px solid var(--line);border-radius:2px;padding:15px;margin-bottom:14px;background:#fff}
+.ctlrow{margin:16px 0}
+.ctlrow label{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:9px;color:var(--muted)}
+.ctlrow label b{font-family:Newsreader,serif;font-size:1.12rem;font-weight:400;color:var(--charcoal);letter-spacing:-.01em}
+input[type=range]{width:100%;accent-color:var(--gold);height:22px}
+.presets{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.pill{border:1px solid var(--line);border-radius:99px;padding:7px 12px;font-size:.8rem;color:var(--muted);transition:.15s}
+.pill[aria-pressed=true]{background:var(--forest);border-color:var(--forest);color:var(--paper)}
+details.adv{margin-top:14px;border-top:1px solid var(--line-soft);padding-top:12px}
+details.adv summary{color:var(--muted);cursor:pointer;list-style:none;font-size:.85rem}
+details.adv summary::-webkit-details-marker{display:none}
+details.adv summary::after{content:" ↓"}
+details.adv[open] summary::after{content:" ↑"}
+.btn{display:block;width:100%;text-align:center;padding:14px;border-radius:2px;background:var(--forest);color:var(--paper);font-weight:500;margin-top:14px}
+.btn.ghost{background:none;border:1px solid var(--line);color:var(--charcoal)}
+.btn.gold{background:var(--amber);color:var(--charcoal)}
+.split{display:flex;gap:8px}
+.split .btn{margin-top:0}
+
+/* exposure bar */
+.expbar{display:flex;height:9px;border-radius:2px;overflow:hidden;margin:14px 0 10px}
+.expbar i{display:block}
+.explegend{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px}
+.explegend span{display:flex;align-items:center;gap:7px;font-size:.84rem;color:var(--muted)}
+.explegend em{width:9px;height:9px;border-radius:2px;flex:none}
+.explegend b{margin-left:auto;color:var(--charcoal);font-weight:500}
+
+/* objects */
+.obj{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--line-soft)}
+.obj .ic{width:30px;height:30px;flex:none;border:1px solid var(--line);border-radius:2px;display:grid;place-items:center;font-size:.9rem}
+.obj .bd{flex:1;min-width:0}
+.obj .bd b{display:block;font-weight:500;font-size:.93rem}
+.obj .bd .sub{color:var(--muted-l);font-size:.78rem;margin-top:2px}
+.obj .x{color:var(--muted-l);padding:4px 6px}
+.minirow{display:flex;gap:8px;margin-top:9px}
+.minirow div{flex:1}
+.minirow label{display:block;color:var(--muted-l);font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.minirow input{width:100%;border:1px solid var(--line);border-radius:2px;padding:8px;font-size:.86rem;background:#fff}
+.addrow{display:flex;gap:7px;flex-wrap:wrap;margin-top:14px}
+.addrow button{border:1px solid var(--line);border-radius:2px;padding:10px 13px;font-size:.85rem;color:var(--charcoal)}
+.addrow button:hover{border-color:var(--forest)}
+
+/* plants */
+.pcard{border:1px solid var(--line);border-radius:3px;background:#fff;margin-bottom:12px;overflow:hidden}
+.pcard .hd{display:flex;gap:12px;padding:14px 14px 12px;align-items:flex-start}
+.pcard .hd .nm{flex:1;min-width:0}
+.pcard .nm h3{font-family:Newsreader,serif;font-size:1.24rem;font-weight:400;line-height:1.15;letter-spacing:-.01em}
+.pcard .nm .sci{font-style:italic;color:var(--muted-l);font-size:.8rem;margin-top:3px}
+.score{flex:none;text-align:right}
+.score b{font-family:Newsreader,serif;font-size:1.5rem;font-weight:400;line-height:1;display:block}
+.score span{color:var(--muted-l);font-size:.66rem;letter-spacing:.08em;text-transform:uppercase}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:5px 12px;padding:0 14px 12px}
+.facts span{color:var(--muted);font-size:.83rem;display:flex;gap:7px}
+.facts span i{color:var(--muted-l);font-style:normal;width:15px;flex:none;text-align:center}
+.why{background:var(--sand);padding:12px 14px;font-size:.87rem;line-height:1.55;color:#3B423C}
+.why b{display:block;font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);margin-bottom:5px;font-family:"IBM Plex Mono",monospace}
+.pcard .act{display:flex;border-top:1px solid var(--line-soft)}
+.pcard .act button{flex:1;padding:12px;font-size:.85rem;color:var(--forest);font-weight:500}
+.pcard .act button+button{border-left:1px solid var(--line-soft)}
+.warn{border-left:2px solid var(--amber);background:#FDF6E7;padding:12px 14px;font-size:.87rem;line-height:1.55;margin-bottom:12px;border-radius:0 2px 2px 0}
+.warn b{display:block;margin-bottom:4px;font-weight:500}
+.empty{text-align:center;padding:38px 20px;color:var(--muted)}
+.empty h3{font-family:Newsreader,serif;font-size:1.4rem;font-weight:400;margin-bottom:8px;color:var(--charcoal)}
+.tag{display:inline-block;background:var(--sand);color:var(--muted);padding:3px 7px;border-radius:2px;font-size:.7rem;margin:0 5px 5px 0}
+.conf{color:var(--muted-l);font-size:.75rem;line-height:1.6;margin-top:16px;padding-top:12px;border-top:1px solid var(--line-soft)}
+.conf b{color:var(--muted);font-weight:500}
+#projects{position:fixed;inset:0;z-index:1200;background:rgba(25,28,26,.4);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:center}
+.projwrap{background:var(--paper);width:100%;max-width:560px;max-height:88vh;display:flex;flex-direction:column;border-radius:4px 4px 0 0;border:1px solid var(--line)}
+@media(min-width:700px){#projects{align-items:center}.projwrap{border-radius:4px;max-height:82vh}}
+.projhead{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+.projhead h2{font-size:1.6rem;font-weight:300;letter-spacing:-.015em}
+.projhead button{font-size:1.1rem;color:var(--muted);padding:4px 8px}
+#flash{position:fixed;left:50%;transform:translateX(-50%);bottom:26px;z-index:1400;background:var(--forest);color:var(--paper);
+  padding:11px 18px;border-radius:3px;font-size:.9rem;box-shadow:0 6px 20px rgba(25,28,26,.25)}
+#report{display:none}
+body.printing #report{display:block}
+.rep-head{display:flex;justify-content:space-between;align-items:flex-start;border-bottom:2px solid var(--forest);padding-bottom:10px;margin-bottom:22px}
+.rep-co{font-family:Newsreader,serif;font-size:1.5rem;letter-spacing:-.01em}
+.rep-tag{color:var(--muted);font-size:.85rem;margin-top:2px}
+.rep-meta{text-align:right;font-size:.78rem;color:var(--muted);line-height:1.6}
+.rep-title{font-family:Newsreader,serif;font-weight:300;font-size:2.2rem;letter-spacing:-.02em;line-height:1.1}
+.rep-sub{color:var(--muted);font-size:.9rem;margin:6px 0 26px}
+#report h2{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--forest);margin:26px 0 8px;padding-bottom:5px;border-bottom:1px solid var(--line)}
+#report h3{font-family:Newsreader,serif;font-size:1.1rem;font-weight:400;margin:16px 0 6px}
+.rep-t{width:100%;border-collapse:collapse;font-size:.88rem}
+.rep-t td,.rep-t th{padding:6px 8px 6px 0;vertical-align:top;border-bottom:1px solid var(--line-soft);text-align:left}
+.rep-t td:first-child{color:var(--muted);width:34%}
+.rep-grid td:first-child{color:var(--charcoal);width:auto}
+.rep-t th{font-family:"IBM Plex Mono",monospace;font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted-l)}
+.rep-t .num{text-align:right}
+.rep-t .ital{font-style:italic;color:var(--muted)}
+.rep-note{font-size:.8rem;color:var(--muted);line-height:1.6}
+.rep-foot{margin-top:28px;padding-top:10px;border-top:1px solid var(--line);font-size:.72rem;color:var(--muted-l)}
+@media print{
+  body.printing > *:not(#report){display:none!important}
+  body.printing #report{display:block;padding:0}
+  #report h2{break-after:avoid}
+  .rep-t{break-inside:auto}
+  tr{break-inside:avoid}
+}
+@media print{
+  #landing,#loading,.topbar,.mapctl,.tabs,.grab,#sheet .act,.btn{display:none!important}
+  #work{position:static;display:block}
+  #sheet{height:auto!important;width:auto;border:none;box-shadow:none}
+  .sheetbody{overflow:visible;padding:0}
+  body{background:#fff}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ LANDING ============ -->
+<div id="landing">
+  <div class="mark">
+    <svg class="glyph" viewBox="0 0 20 20" aria-hidden="true"><ellipse cx="10" cy="10" rx="9" ry="4.2" fill="none" stroke="#1F3D2E" stroke-width="1.1"/><circle cx="16.5" cy="8.2" r="2.6" fill="#E3A63C"/></svg>
+    <span>ECLIPTIC</span>
+  </div>
+
+  <section class="hero">
+    <div>
+      <h1>Plan your landscape<br>around the <em>sun</em>.</h1>
+      <p class="lede">Enter your address and see how sunlight and shadows move across your property through the day and through the year — then find the plants that will actually thrive in each spot.</p>
+      <div class="search">
+        <label class="mono" for="addr">Your property address</label>
+        <div class="searchbox">
+          <input id="addr" type="text" placeholder="123 Main St, Chattanooga, TN" autocomplete="street-address" enterkeyhint="search">
+          <button id="go">Analyze my yard</button>
+        </div>
+        <div class="hint" id="hint">Or start with a landmark, city, or ZIP.</div>
+        <button id="useLoc" class="mono" style="margin-top:10px;color:var(--forest);text-decoration:underline;text-underline-offset:3px">Use my current location</button>
+        <div id="manual" class="hide" style="margin-top:10px"><button id="dropPin" class="mono" style="color:var(--forest);text-decoration:underline;text-underline-offset:3px">Drop a pin on the map instead</button></div>
+        <div class="suggest hide" id="suggest"></div>
+      </div>
+    </div>
+
+    <div class="demo">
+      <div class="stage">
+        <svg id="demoSvg" viewBox="0 0 400 300" aria-label="Example property showing a house and tree casting shadows across a garden bed"></svg>
+        <div class="cap">
+          <span class="mono" id="demoWhen">June 21 · 2:00 PM</span>
+          <b id="demoHrs">6.7 hours of direct sun</b>
+          <span class="mono" style="color:var(--muted-l)">at the marked bed</span>
+        </div>
+      </div>
+      <div class="bar">
+        <span class="t mono">6 AM</span>
+        <input id="demoTime" type="range" min="330" max="1230" step="5" value="840" aria-label="Time of day">
+        <span class="t mono">8 PM</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="strip">
+    <h2>Two spots twenty feet apart are not the same yard.</h2>
+    <p>A bed on the south wall and a bed on the north wall of the same house can differ by six hours of direct sun in December. Hardiness zone alone can't tell you that — it's the same number for both.</p>
+    <div class="three">
+      <div><div class="mono n">01</div><h3>Locate</h3><p>Your address becomes a latitude and longitude, a hardiness zone, and a real aerial image of your lot.</p></div>
+      <div><div class="mono n">02</div><h3>Model</h3><p>Mark the house, garage, fence, and existing trees with their heights. Shadows are projected from true solar position.</p></div>
+      <div><div class="mono n">03</div><h3>Plant</h3><p>Every square metre gets an hours-of-sun figure for each month. Plants are matched to the spot, not the region.</p></div>
+    </div>
+  </section>
+
+  <section class="closer">
+    <h2>Ready to see what your yard can grow?</h2>
+    <button id="go2">Analyze my yard →</button>
+  </section>
+
+  <footer class="legal">
+    Sun position is calculated astronomically from your latitude, longitude, date, and time. Shadow accuracy depends on the heights and positions you enter for buildings and trees, and the model assumes level ground. Results are a planning aid, not a survey. Aerial imagery © Esri and its contributors. Geocoding by OpenStreetMap Nominatim. Nothing about your property is uploaded or stored — the analysis runs entirely in this browser.
+  </footer>
+</div>
+
+<!-- ============ LOADING ============ -->
+<div id="loading" class="hide">
+  <div class="inner">
+    <h2 class="serif">Analyzing your yard</h2>
+    <div id="steps"></div>
+  </div>
+</div>
+
+<div id="projects" class="hide">
+  <div class="projwrap">
+    <div class="projhead"><h2 class="serif">Jobs</h2><button id="projClose" aria-label="Close">✕</button></div>
+    <div class="sheetbody" id="projBody"></div>
+  </div>
+</div>
+<div id="flash" class="hide"></div>
+<div id="report"></div>
+
+<!-- ============ WORKSPACE ============ -->
+<div id="work" class="hide">
+  <div class="topbar">
+    <button class="back" id="projBtn" aria-label="Projects">☰</button>
+    <div class="who"><b id="waddr">—</b><span id="wsub">—</span></div>
+    <div class="zonechip mono" id="wzone">—</div>
+  </div>
+
+  <div id="mapwrap">
+    <div id="map"></div>
+    <div class="compass" aria-hidden="true">
+      <svg width="26" height="26" viewBox="0 0 26 26"><path d="M13 3 L16 14 L13 12 L10 14 Z" fill="#1F3D2E"/><text x="13" y="24" text-anchor="middle" font-size="7" font-family="IBM Plex Mono,monospace" fill="#6E7570">N</text></svg>
+    </div>
+    <div class="mapctl">
+      <button id="tSat" class="mono" aria-pressed="true">Aerial</button>
+      <button id="tShadow" class="mono" aria-pressed="true">Shadows</button>
+      <button id="tHeat" class="mono" aria-pressed="false">Sun hours</button>
+    </div>
+    <div class="suninfo">
+      <div class="mono" style="color:var(--muted-l)">Sun right now</div>
+      <b id="sunDir">—</b>
+      <div class="mono" style="color:var(--muted)" id="sunHt">—</div>
+    </div>
+    <div class="placing hide" id="placing">Tap the map to place it</div>
+    <div class="locatebar hide" id="locateBar">
+      <div class="mono" style="color:var(--muted-l)">Is this your property?</div>
+      <b id="locateAddr">—</b>
+      <div class="mono" id="locateWhy" style="color:var(--gold);margin-top:3px">—</div>
+      <p style="margin:8px 0 0;font-size:.84rem;color:var(--muted);line-height:1.45">Drag the pin onto your roof, or tap the map. Everything is measured from where you put it.</p>
+      <div class="split" style="margin-top:11px">
+        <button class="btn" id="confirmLoc" style="margin-top:0">Yes, this is it</button>
+        <button class="btn ghost" id="reSearch" style="margin-top:0">Search again</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="sheet">
+    <div class="grab" id="grab"><i></i></div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true"  data-tab="sun">Sun</button>
+      <button role="tab" aria-selected="false" data-tab="yard">Yard</button>
+      <button role="tab" aria-selected="false" data-tab="site">Site</button>
+      <button role="tab" aria-selected="false" data-tab="indoor">Indoor</button>
+      <button role="tab" aria-selected="false" data-tab="plants">Plants</button>
+      <button role="tab" aria-selected="false" data-tab="plan">Plan</button>
+    </div>
+    <div class="sheetbody" id="body"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+"use strict";
+/* ═══════════════════════════════════════════════════════════════
+   ECLIPTIC — site-specific solar & planting analysis
+   Modules below are deliberately independent so each can be lifted
+   into its own file when this moves to a repo:
+     Solar · Geo · Shadow · Analysis · PlantDB · Recommend · App
+   ═══════════════════════════════════════════════════════════════ */
+const D2R = Math.PI/180, R2D = 180/Math.PI;
+const mod = (a,n) => ((a%n)+n)%n;
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ─────────────── SOLAR ───────────────
+   NOAA solar position algorithm. Accurate to well under a degree,
+   which is far finer than any shadow input a homeowner can supply. */
+const Solar = (() => {
+  function terms(date){
+    const JD = date.getTime()/86400000 + 2440587.5;
+    const T = (JD - 2451545)/36525;
+    const L0 = mod(280.46646 + T*(36000.76983 + T*0.0003032), 360);
+    const M  = 357.52911 + T*(35999.05029 - 0.0001537*T);
+    const e  = 0.016708634 - T*(0.000042037 + 0.0000001267*T);
+    const C  = Math.sin(M*D2R)*(1.914602 - T*(0.004817 + 0.000014*T))
+             + Math.sin(2*M*D2R)*(0.019993 - 0.000101*T)
+             + Math.sin(3*M*D2R)*0.000289;
+    const trueLong = L0 + C;
+    const omega = 125.04 - 1934.136*T;
+    const lambda = trueLong - 0.00569 - 0.00478*Math.sin(omega*D2R);
+    const eps0 = 23 + (26 + (21.448 - T*(46.815 + T*(0.00059 - T*0.001813)))/60)/60;
+    const eps = eps0 + 0.00256*Math.cos(omega*D2R);
+    const decl = Math.asin(Math.sin(eps*D2R)*Math.sin(lambda*D2R));
+    const y = Math.tan(eps/2*D2R)**2;
+    const eqt = 4*R2D*( y*Math.sin(2*L0*D2R) - 2*e*Math.sin(M*D2R)
+              + 4*e*y*Math.sin(M*D2R)*Math.cos(2*L0*D2R)
+              - 0.5*y*y*Math.sin(4*L0*D2R) - 1.25*e*e*Math.sin(2*M*D2R));
+    return {decl, eqt};
+  }
+  /* altitude & azimuth in degrees; azimuth 0=N, 90=E, clockwise */
+  function position(lat, lon, date){
+    const {decl, eqt} = terms(date);
+    const utcMin = date.getUTCHours()*60 + date.getUTCMinutes() + date.getUTCSeconds()/60;
+    const tst = mod(utcMin + eqt + 4*lon, 1440);
+    const ha = (tst/4 - 180)*D2R;
+    const p = lat*D2R;
+    const sinAlt = Math.sin(p)*Math.sin(decl) + Math.cos(p)*Math.cos(decl)*Math.cos(ha);
+    const alt = Math.asin(clamp(sinAlt,-1,1));
+    const zen = Math.PI/2 - alt;
+    let c = (Math.sin(decl) - Math.sin(p)*Math.cos(zen)) / (Math.cos(p)*Math.sin(zen) || 1e-9);
+    let az = Math.acos(clamp(c,-1,1))*R2D;
+    if (ha > 0) az = 360 - az;
+    return {alt: alt*R2D, az, decl: decl*R2D, eqt};
+  }
+  /* sunrise / solar noon / sunset as local Date objects (null = no event) */
+  function events(lat, lon, date){
+    const noonUTC = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0));
+    const {decl, eqt} = terms(noonUTC);
+    const p = lat*D2R;
+    const cosH = (Math.cos(90.833*D2R) - Math.sin(p)*Math.sin(decl)) / (Math.cos(p)*Math.cos(decl));
+    const base = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+    const noon = new Date(base + (720 - 4*lon - eqt)*60000);
+    if (cosH >= 1)  return {rise:null, set:null, noon, polar:'night'};
+    if (cosH <= -1) return {rise:null, set:null, noon, polar:'day'};
+    const H = Math.acos(cosH)*R2D;
+    return {
+      rise: new Date(base + (720 - 4*(lon + H) - eqt)*60000),
+      set:  new Date(base + (720 - 4*(lon - H) - eqt)*60000),
+      noon, polar:null
+    };
+  }
+  const COMPASS = ['North','North-northeast','Northeast','East-northeast','East','East-southeast',
+    'Southeast','South-southeast','South','South-southwest','Southwest','West-southwest',
+    'West','West-northwest','Northwest','North-northwest'];
+  const compass = az => COMPASS[Math.round(mod(az,360)/22.5) % 16];
+  return {position, events, compass};
+})();
+
+/* ─────────────── GEO ───────────────
+   Local east/north metre plane. Swap this module to change providers. */
+const Geo = (() => {
+  let o = {lat:0, lng:0, mLat:111132, mLng:92000};
+  function origin(lat, lng){
+    const p = lat*D2R;
+    o = {lat, lng,
+      mLat: 111132.92 - 559.82*Math.cos(2*p) + 1.175*Math.cos(4*p),
+      mLng: 111412.84*Math.cos(p) - 93.5*Math.cos(3*p)};
+  }
+  const xy = (lat,lng) => [ (lng-o.lng)*o.mLng, (lat-o.lat)*o.mLat ];
+  const ll = (x,y)     => [ o.lat + y/o.mLat, o.lng + x/o.mLng ];
+  return {origin, xy, ll, get ref(){return o;}};
+})();
+
+/* ─────────────── SHADOW ─────────────── */
+const Shadow = (() => {
+  function hull(pts){
+    const p = pts.slice().sort((a,b)=> a[0]-b[0] || a[1]-b[1]);
+    if (p.length < 3) return p;
+    const cross=(o,a,b)=>(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0]);
+    const lo=[], up=[];
+    for (const q of p){ while(lo.length>=2 && cross(lo[lo.length-2],lo[lo.length-1],q)<=0) lo.pop(); lo.push(q); }
+    for (let i=p.length-1;i>=0;i--){ const q=p[i]; while(up.length>=2 && cross(up[up.length-2],up[up.length-1],q)<=0) up.pop(); up.push(q); }
+    lo.pop(); up.pop();
+    return lo.concat(up);
+  }
+  /* ground footprint in local metres */
+  function footprint(o){
+    // objects normally live at a lat/lng and are projected through the current
+    // Geo origin; an object carrying x/y is already in local metres and is
+    // origin-independent (the landing-page demo relies on this).
+    const [cx,cy] = (o.x != null && o.y != null) ? [o.x, o.y] : Geo.xy(o.lat, o.lng);
+    if (o.type === 'tree'){
+      const r = o.r, pts = [];
+      for (let i=0;i<14;i++){ const a=i/14*2*Math.PI; pts.push([cx+r*Math.cos(a), cy+r*Math.sin(a)]); }
+      return pts;
+    }
+    const t = (o.rot||0)*D2R, hw = o.w/2, hd = o.d/2;
+    return [[-hw,-hd],[hw,-hd],[hw,hd],[-hw,hd]].map(([u,v]) => [
+      cx + u*Math.cos(t) + v*Math.sin(t),
+      cy - u*Math.sin(t) + v*Math.cos(t)
+    ]);
+  }
+  /* shadow cast at a given sun position; null when the sun is down */
+  function cast(o, alt, az){
+    if (alt <= 0.6 || !o.h) return null;
+    const L = Math.min(o.h / Math.tan(alt*D2R), 300);
+    const b = (az + 180)*D2R;
+    const dx = L*Math.sin(b), dy = L*Math.cos(b);
+    const base = footprint(o);
+    if (o.type === 'tree'){
+      // the crown occupies a vertical band, not a plane: hull the shadow of
+      // its underside with the shadow of its top. Low winter sun therefore
+      // drags a long swath rather than dropping one disc far out.
+      const Lb = Math.min((o.cb != null ? o.cb : o.h*0.42) / Math.tan(alt*D2R), 300);
+      const bx = Lb*Math.sin(b), by = Lb*Math.cos(b);
+      return hull(base.map(([x,y]) => [x+bx, y+by]).concat(base.map(([x,y]) => [x+dx, y+dy])));
+    }
+    return hull(base.concat(base.map(([x,y]) => [x+dx, y+dy])));
+  }
+  function inside(poly, x, y){
+    let hit = false;
+    for (let i=0,j=poly.length-1;i<poly.length;j=i++){
+      const [xi,yi]=poly[i], [xj,yj]=poly[j];
+      if ((yi>y)!==(yj>y) && x < (xj-xi)*(y-yi)/(yj-yi)+xi) hit = !hit;
+    }
+    return hit;
+  }
+  const bbox = p => p.reduce((b,[x,y])=>[Math.min(b[0],x),Math.min(b[1],y),Math.max(b[2],x),Math.max(b[3],y)],[1e9,1e9,-1e9,-1e9]);
+  /* how much light this object blocks in a given month (deciduous thin out) */
+  function opacity(o, month){
+    if (o.type === 'tree' && o.deciduous && (month < 3 || month > 9)) return 0.45;
+    return 1;
+  }
+  /* size after N years of growth */
+  function aged(o, years){
+    if (o.type !== 'tree' || !years) return o;
+    const g = o.growth || 0.4; // metres per year
+    return Object.assign({}, o, {
+      h: Math.min(o.matureH || o.h*2.2, o.h + g*years),
+      r: Math.min(o.matureR || o.r*2.2, o.r + g*0.55*years)
+    });
+  }
+  return {footprint, cast, inside, bbox, hull, opacity, aged};
+})();
+
+/* ─────────────── ANALYSIS ───────────────
+   Rasterises direct-sun hours per month over a grid of the property. */
+const Analysis = (() => {
+  const N = 40, SPAN = 100, CELL = SPAN/N;      // 100 m square, 2.5 m cells
+  const STEP = 15;                              // minutes
+  let grid = null;
+
+  function cellCenter(i,j){ return [ (i+0.5)*CELL - SPAN/2, (j+0.5)*CELL - SPAN/2 ]; }
+
+  function run(lat, lon, objects, years, horizon, onProgress){
+    const HZ = Math.max(0.6, horizon || 0);
+    const hours = new Float32Array(N*N*12);
+    const parts = new Float32Array(N*N*3);      // growing-season morning / midday+aft / evening
+    const shade = new Float32Array(N*N);
+    const objs = objects.map(o => Shadow.aged(o, years));
+    const yr = new Date().getFullYear();
+    for (let m=0; m<12; m++){
+      const day = new Date(yr, m, 15, 12, 0, 0);
+      const ev = Solar.events(lat, lon, day);
+      if (!ev.rise) continue;
+      const t0 = new Date(ev.rise.getTime()), t1 = ev.set.getTime();
+      for (let t = t0.getTime(); t <= t1; t += STEP*60000){
+        const pos = Solar.position(lat, lon, new Date(t));
+        if (pos.alt <= HZ) continue;
+        shade.fill(0);
+        for (const o of objs){
+          if (!o.h) continue;
+          const poly = Shadow.cast(o, pos.alt, pos.az);
+          if (!poly) continue;
+          const op = Shadow.opacity(o, m);
+          const [x0,y0,x1,y1] = Shadow.bbox(poly);
+          const i0 = clamp(Math.floor((x0+SPAN/2)/CELL),0,N-1), i1 = clamp(Math.ceil((x1+SPAN/2)/CELL),0,N-1);
+          const j0 = clamp(Math.floor((y0+SPAN/2)/CELL),0,N-1), j1 = clamp(Math.ceil((y1+SPAN/2)/CELL),0,N-1);
+          for (let j=j0;j<=j1;j++) for (let i=i0;i<=i1;i++){
+            const idx = j*N+i;
+            if (shade[idx] >= op) continue;
+            const [cx,cy] = cellCenter(i,j);
+            if (Shadow.inside(poly, cx, cy)) shade[idx] = op;
+          }
+        }
+        const dt = STEP/60;
+        const hr = new Date(t).getHours() + new Date(t).getMinutes()/60;
+        const bucket = hr < 11 ? 0 : hr < 17 ? 1 : 2;
+        const growing = m >= 3 && m < 9;
+        for (let k=0;k<N*N;k++){
+          const lit = dt*(1 - shade[k]);
+          hours[k*12+m] += lit;
+          if (growing) parts[k*3+bucket] += lit/6;   // six sample days -> daily average
+        }
+      }
+      if (onProgress) onProgress((m+1)/12);
+    }
+    grid = {hours, parts, N, SPAN, CELL};
+    return grid;
+  }
+
+  function at(x, y){
+    if (!grid) return null;
+    const i = clamp(Math.floor((x+SPAN/2)/CELL),0,N-1), j = clamp(Math.floor((y+SPAN/2)/CELL),0,N-1);
+    const m = []; for (let k=0;k<12;k++) m.push(grid.hours[(j*N+i)*12+k]);
+    const s = summarise(m);
+    s.morning = grid.parts[(j*N+i)*3];
+    s.midday  = grid.parts[(j*N+i)*3+1];
+    s.evening = grid.parts[(j*N+i)*3+2];
+    return s;
+  }
+  function summarise(m){
+    const avg = a => a.reduce((x,y)=>x+y,0)/a.length;
+    const spring = avg([m[2],m[3],m[4]]), summer = avg([m[5],m[6],m[7]]);
+    const fall = avg([m[8],m[9],m[10]]), winter = avg([m[11],m[0],m[1]]);
+    const grow = avg(m.slice(3,9));
+    const name = h => h>=6 ? 'Full sun' : h>=4 ? 'Part sun' : h>=2 ? 'Part shade' : 'Full shade';
+    const cls = name(grow), wcls = name(winter);
+    return {months:m, spring, summer, fall, winter, grow, cls, wcls,
+            seasonal: cls === wcls ? cls : cls + ', ' + wcls.toLowerCase() + ' in winter'};
+  }
+  /* share of the yard in each class, ignoring cells under buildings */
+  function breakdown(objects){
+    if (!grid) return null;
+    const foot = objects.filter(o=>o.type!=='tree').map(Shadow.footprint);
+    const c = [0,0,0,0]; let tot = 0;
+    for (let j=0;j<N;j++) for (let i=0;i<N;i++){
+      const [x,y] = cellCenter(i,j);
+      if (Math.abs(x)>26 || Math.abs(y)>26) continue;           // score the near yard only
+      if (foot.some(f => Shadow.inside(f,x,y))) continue;
+      let g=0; for (let k=3;k<9;k++) g += grid.hours[(j*N+i)*12+k]; g/=6;
+      c[ g>=6?0 : g>=4?1 : g>=2?2 : 3 ]++; tot++;
+    }
+    return tot ? c.map(v => Math.round(v/tot*100)) : null;
+  }
+  /* auto planting zones on each side of the primary building */
+  function zones(objects){
+    const b = objects.find(o => o.type === 'building');
+    if (!b || !grid) return [];
+    const [cx,cy] = Geo.xy(b.lat, b.lng);
+    const reach = Math.max(b.w, b.d)/2 + 4.5, inner = Math.max(b.w, b.d)/2 + 0.8;
+    const sides = [['North',0,1],['East',1,0],['South',0,-1],['West',-1,0]];
+    const foot = Shadow.footprint(b);
+    return sides.map(([name,ux,uy]) => {
+      const acc = new Array(12).fill(0); let n = 0;
+      for (let d=inner; d<=reach; d+=CELL/2) for (let s=-Math.max(b.w,b.d)/2; s<=Math.max(b.w,b.d)/2; s+=CELL/2){
+        const x = cx + ux*d - uy*s, y = cy + uy*d + ux*s;
+        if (Math.abs(x)>SPAN/2-1 || Math.abs(y)>SPAN/2-1) continue;
+        if (Shadow.inside(foot, x, y)) continue;
+        const i = clamp(Math.floor((x+SPAN/2)/CELL),0,N-1), j = clamp(Math.floor((y+SPAN/2)/CELL),0,N-1);
+        for (let k=0;k<12;k++) acc[k] += grid.hours[(j*N+i)*12+k];
+        n++;
+      }
+      if (!n) return null;
+      const s = summarise(acc.map(v=>v/n));
+      s.name = name + ' side'; s.anchor = Geo.ll(cx+ux*(inner+1.6), cy+uy*(inner+1.6));
+      return s;
+    }).filter(Boolean);
+  }
+  /* paint the growing-season heat map to a canvas */
+  function heatCanvas(){
+    if (!grid) return null;
+    const c = document.createElement('canvas'); c.width = c.height = N;
+    const ctx = c.getContext('2d'), img = ctx.createImageData(N,N);
+    for (let j=0;j<N;j++) for (let i=0;i<N;i++){
+      let g=0; for (let k=3;k<9;k++) g += grid.hours[(j*N+i)*12+k]; g/=6;
+      const t = clamp(g/9, 0, 1);
+      // deep blue-green shade → warm gold sun
+      const r = Math.round( 34 + t*(227-34) ), gg = Math.round( 62 + t*(166-62) ), b = Math.round( 74 + t*(60-74) );
+      const px = ((N-1-j)*N + i)*4;                    // canvas y grows downward, north is up
+      img.data[px]=r; img.data[px+1]=gg; img.data[px+2]=b; img.data[px+3]=150;
+    }
+    ctx.putImageData(img,0,0);
+    return c;
+  }
+  return {run, at, zones, breakdown, heatCanvas, summarise, SPAN, CELL, N,
+          get grid(){return grid;}, get ready(){return !!grid;}};
+})();
+
+/* ─────────────── SITE ───────────────
+   Point-level solar sampling. Everything here answers "how much sun does
+   this exact spot / this exact wall get, and when", which is the question
+   underneath pool siting, patio siting, house rotation and window design. */
+const Site = (() => {
+  const KEYDAYS = [79, 172, 265, 355];                 // equinoxes + solstices
+  const MONTHDAYS = [15,46,74,105,135,166,196,227,258,288,319,349];
+
+  /* Sun reaching one point. facing = wall normal in degrees (null = open sky). */
+  function pointSun(lat, lon, objects, years, horizon, x, y, facing, days){
+    const objs = objects.map(o => Shadow.aged(o, years)).filter(o => o.h > 0);
+    const HZ = Math.max(0.6, horizon || 0);
+    const yr = new Date().getFullYear();
+    // `hours` is duration people can picture; `gain` is cosine-weighted energy
+    // on the surface (irradiance on a vertical wall falls with the incidence
+    // angle), which is what actually separates one house orientation from another.
+    const out = {total:0, summer:0, winter:0, spring:0, morning:0, midday:0, evening:0,
+                 gain:0, summerGain:0, winterGain:0, byDay:[]};
+    const list = days || MONTHDAYS;
+    for (const doy of list){
+      const day = new Date(yr, 0, doy, 12, 0, 0);
+      const ev = Solar.events(lat, lon, day);
+      if (!ev.rise) continue;
+      let acc = 0, mo = 0, mi = 0, evn = 0, gn = 0;
+      for (let t = ev.rise.getTime(); t <= ev.set.getTime(); t += 9e5){
+        const pos = Solar.position(lat, lon, new Date(t));
+        if (pos.alt <= HZ) continue;
+        if (facing != null && angDiffDeg(pos.az, facing) > 90) continue;   // behind the wall
+        let blocked = false;
+        for (const o of objs){
+          const poly = Shadow.cast(o, pos.alt, pos.az);
+          if (poly && Shadow.inside(poly, x, y)){
+            if (Shadow.opacity(o, day.getMonth()) >= 1){ blocked = true; break; }
+          }
+        }
+        if (blocked) continue;
+        const hr = new Date(t).getHours() + new Date(t).getMinutes()/60;
+        acc += 0.25;
+        if (facing != null){
+          const inc = Math.cos(pos.alt*D2R) * Math.cos((pos.az - facing)*D2R);
+          gn += 0.25 * Math.max(0, inc);
+        } else gn += 0.25 * Math.sin(pos.alt*D2R);
+        if (hr < 11) mo += 0.25; else if (hr < 17) mi += 0.25; else evn += 0.25;
+      }
+      const m = day.getMonth();
+      out.byDay.push({doy, hours:acc, gain:gn});
+      out.total += acc/list.length; out.gain += gn/list.length;
+      if (m >= 4 && m <= 8){ out.summer = Math.max(out.summer, acc); out.summerGain = Math.max(out.summerGain, gn); }
+      if (m === 11 || m <= 1){ out.winter = Math.max(out.winter, acc); out.winterGain = Math.max(out.winterGain, gn); }
+      out.morning += mo/list.length; out.midday += mi/list.length; out.evening += evn/list.length;
+    }
+    if (!out.summer) out.summer = out.total;
+    return out;
+  }
+  const angDiffDeg = (a,b) => { let d = Math.abs(a-b)%360; return d>180 ? 360-d : d; };
+
+  /* When does the sun arrive and leave this spot on a given day, and what
+     takes it away? This is the answer people actually want. */
+  function dayProfile(lat, lon, objects, years, horizon, x, y, doy){
+    const objs = objects.map(o => Shadow.aged(o, years)).filter(o => o.h > 0);
+    const HZ = Math.max(0.6, horizon || 0);
+    const day = new Date(new Date().getFullYear(), 0, doy, 12, 0, 0);
+    const ev = Solar.events(lat, lon, day);
+    if (!ev.rise) return null;
+    let first = null, last = null, closer = null, opener = null, prevLit = false, mins = 0;
+    for (let t = ev.rise.getTime(); t <= ev.set.getTime(); t += 6e5){
+      const pos = Solar.position(lat, lon, new Date(t));
+      let lit = pos.alt > HZ, by = null;
+      if (lit) for (const o of objs){
+        const poly = Shadow.cast(o, pos.alt, pos.az);
+        if (poly && Shadow.inside(poly, x, y) && Shadow.opacity(o, day.getMonth()) >= 1){ lit = false; by = o; break; }
+      }
+      if (lit){ mins += 10; if (first === null) first = t; last = t; if (!prevLit) opener = by; }
+      else if (prevLit){ closer = by; }
+      prevLit = lit;
+    }
+    return {hours:mins/60, first: first && new Date(first), last: last && new Date(last),
+            closedBy: closer, rise:ev.rise, set:ev.set};
+  }
+
+  /* Rank candidate locations across the yard for a given use. */
+  const USES = {
+    pool:    {label:'Pool',              bucket:'midday',  pref:'sun'},
+    patio:   {label:'Patio or deck',     bucket:'midday',  pref:null},
+    dining:  {label:'Outdoor dining',    bucket:'evening', pref:null},
+    firepit: {label:'Fire pit',          bucket:'evening', pref:null},
+    veg:     {label:'Vegetable garden',  bucket:'midday',  pref:'sun'},
+    coffee:  {label:'Morning sitting spot', bucket:'morning', pref:null}
+  };
+  const TARGET = {sun:[6,14], mixed:[3.5,6], shade:[0,2.5]};
+
+  function best(objects, use, want, limit){
+    const g = Analysis.grid; if (!g) return [];
+    const {N, CELL, SPAN} = g;
+    const solid = objects.filter(o => o.h > 0);
+    const foot = solid.filter(o => o.type !== 'tree').map(Shadow.footprint);
+    const house = solid.find(o => o.type === 'building');
+    const hc = house ? Geo.xy(house.lat, house.lng) : [0,0];
+    const reach = house ? Math.max(house.w, house.d)/2 : 0;
+    const u = USES[use] || USES.patio;
+    const [lo, hi] = TARGET[want || u.pref || 'mixed'];
+    const cand = [];
+    for (let j=0;j<N;j++) for (let i=0;i<N;i++){
+      const x = (i+0.5)*CELL - SPAN/2, y = (j+0.5)*CELL - SPAN/2;
+      const d = Math.hypot(x-hc[0], y-hc[1]) - reach;
+      if (d < 2 || d > 24) continue;                       // not on the house, not out in the next field
+      if (foot.some(f => Shadow.inside(f, x, y))) continue;
+      let grow = 0; for (let k=3;k<9;k++) grow += g.hours[(j*N+i)*12+k]; grow /= 6;
+      const bucket = g.parts[(j*N+i)*3 + (u.bucket === 'morning' ? 0 : u.bucket === 'midday' ? 1 : 2)];
+      const fit = grow >= lo && grow <= hi ? 100
+        : grow < lo ? Math.max(0, 100 - (lo-grow)*22) : Math.max(0, 100 - (grow-hi)*12);
+      const bmax = u.bucket === 'evening' ? 3.5 : u.bucket === 'morning' ? 5 : 6;
+      // usable outdoor rooms sit near the house; a vegetable plot doesn't care
+      const near = use === 'veg' ? 100 : Math.max(0, 100 - Math.abs(d - 9)*5.5);
+      const score = 0.52*fit + 0.28*Math.min(100, bucket/bmax*100) + 0.20*near;
+      cand.push({x, y, score, grow, bucket, fit, dist:d});
+    }
+    cand.sort((a,b) => b.score - a.score);
+    const picked = [];
+    for (const c of cand){
+      if (picked.length >= (limit||3)) break;
+      if (picked.some(p => Math.hypot(p.x-c.x, p.y-c.y) < 9)) continue;
+      picked.push(c);
+    }
+    return picked;
+  }
+
+  /* Wall-by-wall exposure for the house at a given rotation. */
+  function walls(lat, lon, objects, years, horizon, house, rot){
+    const h = Object.assign({}, house, {rot});
+    const others = objects.filter(o => o.id !== house.id);
+    const [cx, cy] = Geo.xy(h.lat, h.lng);
+    const t = rot*D2R;
+    // outward normals of the four faces, in map degrees (0 = north)
+    // each face carries its own wall length — a long south elevation is worth
+    // more than a short one, which is what makes rotation matter at all
+    const faces = [
+      {n: mod(rot, 360),     len:h.w, off:[ Math.sin(t)*(h.d/2+1.5),  Math.cos(t)*(h.d/2+1.5)]},
+      {n: mod(rot+90, 360),  len:h.d, off:[ Math.cos(t)*(h.w/2+1.5), -Math.sin(t)*(h.w/2+1.5)]},
+      {n: mod(rot+180, 360), len:h.w, off:[-Math.sin(t)*(h.d/2+1.5), -Math.cos(t)*(h.d/2+1.5)]},
+      {n: mod(rot+270, 360), len:h.d, off:[-Math.cos(t)*(h.w/2+1.5),  Math.sin(t)*(h.w/2+1.5)]}
+    ];
+    return faces.map(f => {
+      const s = pointSun(lat, lon, others, years, horizon, cx+f.off[0], cy+f.off[1], f.n, KEYDAYS);
+      return {normal: f.n, len: f.len, dir: Solar.compass(f.n), summer: s.summer, winter: s.winter,
+              morning: s.morning, midday: s.midday, evening: s.evening, total: s.total,
+              gain: s.gain, summerGain: s.summerGain, winterGain: s.winterGain};
+    });
+  }
+
+  /* Sweep house rotation and score each angle. */
+  function sweep(lat, lon, objects, years, horizon, house, step){
+    const out = [];
+    for (let r=0; r<180; r+=(step||15)){
+      const w = walls(lat, lon, objects, years, horizon, house, r);
+      out.push({rot:r, m: orientationMetrics(w), walls:w});
+    }
+    return out;
+  }
+  /* Passive-solar siting heuristic, not an energy model. Winter sun on the
+     face nearest south is the prize; summer evening sun on the west face is
+     the penalty. Returned raw so the UI can compare orientations against
+     each other rather than against an invented absolute scale. */
+  function orientationMetrics(w){
+    const near = az => w.reduce((b,f) => angDiffDeg(f.normal,az) < angDiffDeg(b.normal,az) ? f : b, w[0]);
+    const s = near(180), e = near(90), west = near(270), n = near(0);
+    // west evening gain is the overheating term; winter south gain is the prize
+    const mean = w.reduce((a,f)=>a+f.len,0)/4;
+    const A = f => f.len/mean;                       // wall length weighting
+    const westEve = west.summerGain * (west.evening/(west.total||1)) * A(west);
+    return {winterSouth:s.winter, winterGain:s.winterGain*A(s), summerSouth:s.summer,
+            southWall:s.len, morningEast:e.morning, westHeat:west.evening,
+            westGain:westEve, northDark:n.total,
+            raw: s.winterGain*A(s)*7 + e.gain*A(e)*2 + s.summerGain*A(s)*1.2 - westEve*6};
+  }
+  function orientationScore(w){ return orientationMetrics(w).raw; }
+
+  return {pointSun, dayProfile, best, walls, sweep, orientationMetrics, USES, TARGET};
+})();
+
+/* ─────────────── INDOOR PLANTS ───────────────
+   Window light is classified into four bands; distance from the glass drops a
+   spot one band roughly every 4–5 feet, which is the standard rule of thumb. */
+const IndoorDB = (() => {
+  /* dfMin  — sky-component daylight factor below which the plant declines
+     ideal  — the band it actually wants
+     direct — hours of direct sun on the spot it needs / will tolerate before scorching */
+  const I = (n,s,dfMin,il,ih,dMin,dMax,water,pet,size,note) =>
+    ({n,s,dfMin,ideal:[il,ih],direct:[dMin,dMax],water,pet,size,note});
+  const list = [
+    I('Meyer Lemon','Citrus \u00d7 meyeri',5,8,20,4,12,'Moderate',1,'3\u20135 ft','Will not fruit indoors without several hours of real direct sun.'),
+    I('Jade Plant','Crassula ovata',4,6,20,3,12,'Low',0,'2\u20133 ft','Succulent. Direct sun and long dry spells between waterings.'),
+    I('String of Pearls','Curio rowleyanus',4,7,20,3,12,'Low',0,'Trailing','Hanging succulent for a hot bright window. Rots in dim corners.'),
+    I('Bird of Paradise','Strelitzia nicolai',4,6,20,2,10,'Moderate',0,'5\u20138 ft','One of the few houseplants that takes hours of direct sun happily.'),
+    I('Ponytail Palm','Beaucarnea recurvata',3,5,15,2,8,'Low',1,'3\u20136 ft','Stores water in its base. Nearly unkillable in good light.'),
+    I('Fiddle-leaf Fig','Ficus lyrata',3,5,15,0,3,'Moderate',0,'6\u201310 ft','Wants the brightest spot in the house but resents hot afternoon glass.'),
+    I('Hoya','Hoya carnosa',3,4,12,1,5,'Low',1,'Trailing','Tolerates neglect. Only blooms in genuinely bright light.'),
+    I('Norfolk Island Pine','Araucaria heterophylla',3,4,12,1,4,'Moderate',0,'4\u20138 ft','Drops lower branches permanently if light is too low. They do not regrow.'),
+    I('Rubber Plant','Ficus elastica',2.5,4,12,0,3,'Moderate',0,'4\u20138 ft','Burgundy cultivars need more light than green ones to hold colour.'),
+    I('Monstera','Monstera deliciosa',2,3,10,0,2,'Moderate',0,'4\u20138 ft','The split leaves only develop in bright light. Dim corners give plain ones.'),
+    I('Spider Plant','Chlorophytum comosum',1.2,2,7,0,2,'Moderate',1,'1\u20132 ft','Forgiving. Brown tips are usually tap water, not light.'),
+    I("Bird's Nest Fern",'Asplenium nidus',1.5,2,6,0,0.5,'High',1,'1\u20133 ft','Bright but never direct. Wants humidity more than brightness.'),
+    I('Rattlesnake Plant','Goeppertia insignis',1.5,2,5,0,0.5,'High',1,'1\u20132 ft','Fussy about water quality, not about brightness. Direct sun bleaches it.'),
+    I('Prayer Plant','Maranta leuconeura',1.5,2,6,0,0.5,'High',1,'1 ft','Medium light and steady moisture. Folds up at night.'),
+    I('Peace Lily','Spathiphyllum',1,1.5,5,0,1,'Moderate',0,'1\u20133 ft','Wilts theatrically when thirsty, then recovers. Needs medium light to flower.'),
+    I('Parlour Palm','Chamaedorea elegans',1,1.5,4,0,1,'Moderate',1,'2\u20134 ft','A Victorian parlour standby precisely because it takes dim rooms.'),
+    I('Heartleaf Philodendron','Philodendron hederaceum',0.8,1.5,6,0,1.5,'Moderate',0,'Trailing','Grows in nearly anything above genuinely dark.'),
+    I('Chinese Evergreen','Aglaonema',0.8,1.2,4,0,1,'Low',0,'1\u20133 ft','Handles medium light and irregular watering without complaint.'),
+    I('Pothos','Epipremnum aureum',0.7,1.5,6,0,2,'Low',0,'Trailing','Variegation fades as light drops, but the plant persists.'),
+    I('Snake Plant','Dracaena trifasciata',0.7,1.5,8,0,6,'Very low',0,'1\u20134 ft','Survives low light, thrives in bright. Overwatering is the only real risk.'),
+    I('ZZ Plant','Zamioculcas zamiifolia',0.6,1,5,0,3,'Very low',0,'2\u20133 ft','Rhizomes store water. The most shade-tolerant plant commonly sold.'),
+    I('Cast Iron Plant','Aspidistra elatior',0.5,0.8,4,0,1,'Low',1,'2\u20133 ft','Named for what it survives. Genuinely fine in a north corner.')
+  ];
+  function score(df, direct, p){
+    let d;
+    if (df >= p.ideal[0] && df <= p.ideal[1]) d = 100;
+    else if (df < p.ideal[0]) d = df < p.dfMin ? Math.max(0, 55 - (p.dfMin-df)*45) : 55 + (df-p.dfMin)/(p.ideal[0]-p.dfMin||1)*45;
+    else d = Math.max(45, 100 - (df-p.ideal[1])*4);
+    let s = 100;
+    if (direct > p.direct[1]) s = Math.max(0, 100 - (direct-p.direct[1])*30);
+    else if (direct < p.direct[0]) s = Math.max(15, 100 - (p.direct[0]-direct)*28);
+    return Math.round(clamp(0.62*d + 0.38*s, 0, 99));
+  }
+  function why(df, direct, p){
+    const b = [];
+    b.push(`This spot reads a daylight factor of ${df.toFixed(1)}% with ${direct < 0.2 ? 'no direct sun' : direct.toFixed(1) + ' hours of direct sun'} landing on it.`);
+    if (df < p.dfMin) b.push(`${p.n} starts to decline below about ${p.dfMin}%, so this is dimmer than it wants — move it closer to the glass or add a grow light.`);
+    else if (df >= p.ideal[0] && df <= p.ideal[1]) b.push(`That sits inside its preferred ${p.ideal[0]}\u2013${p.ideal[1]}% band.`);
+    else if (df > p.ideal[1]) b.push(`Brighter than it strictly needs, which is rarely a problem on its own.`);
+    else b.push(`A little below its preferred ${p.ideal[0]}\u2013${p.ideal[1]}% band but above the point where it suffers.`);
+    if (direct > p.direct[1]) b.push(`It only takes about ${p.direct[1]} hours of direct sun before the leaves scorch — pull it back from the window or filter the glass.`);
+    else if (p.direct[0] > 0 && direct < p.direct[0]) b.push(`It wants at least ${p.direct[0]} hours of direct sun, which this spot does not get.`);
+    return b.join(' ');
+  }
+  function forSpot(df, direct, petSafe, limit){
+    return list.filter(p => !petSafe || p.pet).map(p => ({p, s: score(df, direct, p)}))
+      .filter(r => r.s >= 45).sort((a,b) => b.s - a.s).slice(0, limit || 6);
+  }
+  /* Wall-level shorthand for the Site tab, which knows a wall's exposure but
+     not room geometry. Representative daylight factors are fed through the
+     same score() the Indoor tab uses, so the two views cannot drift apart. */
+  const BANDS = ['low','medium','bright','high'];
+  const BAND_DF = {low:0.9, medium:2.0, bright:4.5, high:8.0};
+  const BAND_DIRECT = {low:0, medium:0, bright:0.5, high:3};
+  function bandFromWall(w, obstruction){
+    let b;
+    if (w.midday >= 3.5) b = 'high';
+    else if (w.midday >= 1 || w.morning >= 2.5 || w.evening >= 2.5) b = 'bright';
+    else b = 'bright';
+    if (obstruction > 0.55) b = drop(b, 1);
+    if (obstruction > 0.85) b = drop(b, 1);
+    return b;
+  }
+  const drop = (b, steps) => BANDS[clamp(BANDS.indexOf(b) - steps, 0, 3)];
+  function forBandName(b, petSafe, limit){
+    return forSpot(BAND_DF[b], BAND_DIRECT[b], petSafe, limit || 3);
+  }
+  return {list, score, why, forSpot, bandFromWall, drop, forBandName, BANDS};
+})();
+
+/* ─────────────── INDOOR ───────────────
+   Two separate physical quantities, kept separate because plants respond to
+   them differently:
+
+   1. DIRECT SUN PATCH — the window aperture projected onto the floor along the
+      sun vector. Identical geometry to a shadow, inverted. Exact.
+   2. SKY COMPONENT of daylight factor — the view factor from a floor point to
+      the window aperture, weighted by CIE overcast sky luminance. This is the
+      standard daylighting calculation, minus the externally-reflected and
+      internally-reflected components, so it reads low against a full DF.
+
+   Everything is in house-local metres: u across the width, v across the depth,
+   origin at the footprint centre, +v along the house rotation bearing. */
+const Indoor = (() => {
+  const CELL = 0.3;                 // floor grid, metres
+  const POT  = 0.4;                 // height plants are read at
+  const GLASS = 0.72;               // transmittance x dirt, standard practice
+  const KEYDAYS = [79, 172, 355];   // equinox, summer solstice, winter solstice
+
+  /* the four exterior faces of the footprint, in house-local space */
+  function faceGeom(house, face){
+    const hw = house.w/2, hd = house.d/2;
+    return [
+      {axis:'v', at: hd, span:[-hw,hw], sign: 1, normal: mod(house.rot,360)},
+      {axis:'u', at: hw, span:[-hd,hd], sign: 1, normal: mod(house.rot+90,360)},
+      {axis:'v', at:-hd, span:[-hw,hw], sign:-1, normal: mod(house.rot+180,360)},
+      {axis:'u', at:-hw, span:[-hd,hd], sign:-1, normal: mod(house.rot+270,360)}
+    ][face];
+  }
+  /* a window's four aperture corners as [u,v,z] in house-local space */
+  function aperture(win, house){
+    const f = faceGeom(house, win.face);
+    const a = win.pos - win.width/2, b = win.pos + win.width/2;
+    const pt = (t,z) => f.axis === 'v' ? [t, f.at, z] : [f.at, t, z];
+    return [pt(a,win.sill), pt(b,win.sill), pt(b,win.head), pt(a,win.head)];
+  }
+  const localToMap = (house, u, v) => {
+    const t = house.rot*D2R, [cx,cy] = Geo.xy(house.lat, house.lng);
+    return [cx + u*Math.cos(t) + v*Math.sin(t), cy - u*Math.sin(t) + v*Math.cos(t)];
+  };
+
+  /* Sunlight through one window, landing on the floor. Returns a quad in
+     house-local (u,v) or null when no sun can enter. */
+  function patch(win, house, alt, az){
+    if (alt <= 1) return null;
+    const f = faceGeom(house, win.face);
+    let rel = mod(az - f.normal + 180, 360) - 180;
+    if (Math.abs(rel) >= 88) return null;              // sun is behind this wall
+    const run = 1/Math.tan(alt*D2R);
+    const dir = (az + 180 - house.rot)*D2R;            // ray direction, house-local
+    const du = Math.sin(dir), dv = Math.cos(dir);
+    return aperture(win, house).map(([u,v,z]) => [u + z*run*du, v + z*run*dv]);
+  }
+
+  /* Sky component of daylight factor at one floor point, in percent. */
+  function skyComponent(u, v, wins, house, availability){
+    let total = 0;
+    for (let k=0;k<wins.length;k++){
+      const win = wins[k], f = faceGeom(house, win.face);
+      const avail = availability ? availability[k] : 1;
+      const NU = 5, NV = 3;
+      const dw = win.width/NU, dh = (win.head - win.sill)/NV;
+      const dA = dw*dh;
+      for (let i=0;i<NU;i++) for (let j=0;j<NV;j++){
+        const t = win.pos - win.width/2 + (i+0.5)*dw;
+        const z = win.sill + (j+0.5)*dh;
+        const qu = f.axis === 'v' ? t : f.at, qv = f.axis === 'v' ? f.at : t;
+        const dx = qu-u, dy = qv-v, dz = z-POT;
+        const r2 = dx*dx + dy*dy + dz*dz;
+        if (r2 < 0.02) continue;
+        const r = Math.sqrt(r2);
+        // cosine at the aperture (its normal is the face normal, house-local)
+        const nu = f.axis === 'u' ? f.sign : 0, nv = f.axis === 'v' ? f.sign : 0;
+        const cosQ = (dx*nu + dy*nv)/r;
+        if (cosQ <= 0) continue;                        // floor point is outside the wall
+        const cosP = dz/r;                              // horizontal receiver
+        if (cosP <= 0) continue;                        // window below the pot
+        // CIE overcast luminance in the sky direction, normalised by the
+        // horizontal illuminance of the whole sky (7*pi*Lz/9)
+        total += (3/(7*Math.PI)) * (1 + 2*cosP) * cosP * (dA*cosQ/r2) * avail;
+      }
+    }
+    return total*100*GLASS;
+  }
+
+  /* Full room analysis: daylight factor plus direct-sun hours per floor cell. */
+  function analyze(room, wins, house, lat, lon, objects, years, horizon){
+    const nu = Math.max(1, Math.round((room.u1-room.u0)/CELL));
+    const nv = Math.max(1, Math.round((room.v1-room.v0)/CELL));
+    const df = new Float32Array(nu*nv);
+    const sun = {summer:new Float32Array(nu*nv), winter:new Float32Array(nu*nv), equinox:new Float32Array(nu*nv)};
+    const solid = objects.map(o => Shadow.aged(o, years)).filter(o => o.h > 0 && o.id !== house.id);
+    const HZ = Math.max(0.6, horizon || 0);
+
+    // how much of the sky each window can actually see, given trees and neighbours
+    const avail = wins.map(w => {
+      const f = faceGeom(house, w.face);
+      const a = aperture(w, house), mu = (a[0][0]+a[1][0])/2, mv = (a[0][1]+a[1][1])/2;
+      const [mx,my] = localToMap(house, mu + (f.axis==='u'?f.sign*0.4:0), mv + (f.axis==='v'?f.sign*0.4:0));
+      let open = 0, tot = 0;
+      for (let alt=8; alt<86; alt+=12) for (let d=-80; d<=80; d+=20){
+        const az = mod(f.normal + d, 360), wgt = Math.cos(alt*D2R)*Math.cos(d*D2R);
+        tot += wgt;
+        const blocked = solid.some(o => { const p = Shadow.cast(o, alt, az); return p && Shadow.inside(p, mx, my); });
+        if (!blocked) open += wgt;
+      }
+      return tot ? open/tot : 1;
+    });
+
+    for (let j=0;j<nv;j++) for (let i=0;i<nu;i++){
+      const u = room.u0 + (i+0.5)*CELL, v = room.v0 + (j+0.5)*CELL;
+      df[j*nu+i] = skyComponent(u, v, wins, house, avail);
+    }
+
+    const yr = new Date().getFullYear();
+    KEYDAYS.forEach((doy, di) => {
+      const key = di === 0 ? 'equinox' : di === 1 ? 'summer' : 'winter';
+      const day = new Date(yr, 0, doy, 12, 0, 0);
+      const ev = Solar.events(lat, lon, day);
+      if (!ev.rise) return;
+      for (let t = ev.rise.getTime(); t <= ev.set.getTime(); t += 9e5){
+        const pos = Solar.position(lat, lon, new Date(t));
+        if (pos.alt <= HZ) continue;
+        wins.forEach((w, k) => {
+          const f = faceGeom(house, w.face);
+          const q = patch(w, house, pos.alt, pos.az);
+          if (!q) return;
+          const a = aperture(w, house);
+          const [mx,my] = localToMap(house, (a[0][0]+a[1][0])/2 + (f.axis==='u'?f.sign*0.4:0),
+                                            (a[0][1]+a[1][1])/2 + (f.axis==='v'?f.sign*0.4:0));
+          if (solid.some(o => { const p = Shadow.cast(o, pos.alt, pos.az);
+              return p && Shadow.inside(p, mx, my) && Shadow.opacity(o, day.getMonth()) >= 1; })) return;
+          const bb = Shadow.bbox(q);
+          const i0 = clamp(Math.floor((bb[0]-room.u0)/CELL),0,nu-1), i1 = clamp(Math.ceil((bb[2]-room.u0)/CELL),0,nu-1);
+          const j0 = clamp(Math.floor((bb[1]-room.v0)/CELL),0,nv-1), j1 = clamp(Math.ceil((bb[3]-room.v0)/CELL),0,nv-1);
+          for (let j=j0;j<=j1;j++) for (let i=i0;i<=i1;i++){
+            const u = room.u0 + (i+0.5)*CELL, v = room.v0 + (j+0.5)*CELL;
+            if (Shadow.inside(q, u, v)) sun[key][j*nu+i] += 0.25;
+          }
+        });
+      }
+    });
+    return {nu, nv, CELL, df, sun, avail,
+            u0:room.u0, v0:room.v0,
+            maxDF: df.reduce((a,b)=>Math.max(a,b),0)};
+  }
+
+  function at(res, u, v){
+    const i = clamp(Math.floor((u-res.u0)/CELL),0,res.nu-1), j = clamp(Math.floor((v-res.v0)/CELL),0,res.nv-1);
+    const k = j*res.nu+i;
+    return {df:res.df[k], summer:res.sun.summer[k], winter:res.sun.winter[k], equinox:res.sun.equinox[k]};
+  }
+  /* plain-language band, driven by daylight factor */
+  function band(df, summer, winter){
+    if (Math.max(summer||0, (winter||0)*0.7) >= 2) return 'high';
+    if (df >= 6) return 'vbright';
+    if (df >= 3) return 'bright';
+    if (df >= 1.5) return 'medium';
+    if (df >= 0.7) return 'low';
+    return 'dark';
+  }
+    const BANDLBL = {high:'Direct sun', vbright:'Very bright indirect', bright:'Bright indirect',
+    medium:'Medium', low:'Low', dark:'Too dark for plants'};
+  const BANDCOL = {high:'#E3A63C', vbright:'#EFCB8A', bright:'#D8D6BE', medium:'#9FB0A6', low:'#5F7A80', dark:'#33454F'};
+  return {analyze, at, patch, aperture, faceGeom, localToMap, skyComponent, band, BANDLBL, BANDCOL, CELL, POT};
+})();
+
+/* ─────────────── MAP PROVIDER ───────────────
+   Every call to the outside world for geocoding goes through here, so the
+   provider can be swapped without touching anything else. Results are
+   normalised into one shape and carry an explicit granularity, because a
+   geocoder that returns a street centreline and one that returns a rooftop
+   look identical if you only read lat/lon. */
+const MapAPI = (() => {
+  const BASE = 'https://nominatim.openstreetmap.org';
+  let seq = 0, ctrl = null;
+
+  function normalise(x){
+    const a = x.address || {};
+    const cls = x.class || x.category, typ = x.type;
+    const hasNum = !!a.house_number;
+    let granularity = 'area', confidence = 0.30;
+    if (hasNum || cls === 'building' || typ === 'house'){ granularity = 'building'; confidence = 0.95; }
+    else if (cls === 'highway' || typ === 'road' || a.road){ granularity = 'street'; confidence = 0.60; }
+    else if (typ === 'postcode'){ granularity = 'postcode'; confidence = 0.45; }
+    else if (['city','town','village','hamlet','suburb','neighbourhood'].includes(typ)){ granularity = 'place'; confidence = 0.35; }
+    return {
+      lat:+x.lat, lon:+x.lon, display:x.display_name, placeId:x.place_id,
+      osm: x.osm_type ? x.osm_type + '/' + x.osm_id : null, resultType: (cls||'') + '/' + (typ||''),
+      street: [a.house_number, a.road].filter(Boolean).join(' '),
+      city: a.city || a.town || a.village || a.hamlet || a.municipality || '',
+      county: a.county || '', state: a.state || '',
+      postcode: a.postcode || '', country: a.country_code || '',
+      granularity, confidence, importance: x.importance, bbox: x.boundingbox
+    };
+  }
+  /* Returns null when a newer search superseded this one — never stale data. */
+  async function searchAddresses(q){
+    const id = ++seq;
+    if (ctrl) ctrl.abort();
+    ctrl = new AbortController();
+    const r = await fetch(`${BASE}/search?format=jsonv2&addressdetails=1&limit=6&q=${encodeURIComponent(q)}`,
+      {signal: ctrl.signal, headers:{'Accept-Language': navigator.language || 'en'}});
+    if (!r.ok) throw new Error('geocoder returned ' + r.status);
+    const j = await r.json();
+    if (id !== seq) return null;
+    return j.map(normalise);
+  }
+  async function reverseGeocode(lat, lon){
+    const r = await fetch(`${BASE}/reverse?format=jsonv2&addressdetails=1&zoom=18&lat=${lat}&lon=${lon}`,
+      {headers:{'Accept-Language': navigator.language || 'en'}});
+    if (!r.ok) throw new Error('reverse geocoder returned ' + r.status);
+    return normalise(await r.json());
+  }
+  const zoomFor = g => g === 'building' ? 20 : g === 'street' ? 18 : g === 'postcode' ? 15 : 13;
+  const GRAN = {building:'Rooftop match', street:'Street-level match — drag the pin to your house',
+    postcode:'ZIP-code centre only — drag the pin to your house',
+    place:'Town centre only — drag the pin to your house', area:'Approximate area — drag the pin to your house'};
+  return {searchAddresses, reverseGeocode, zoomFor, GRAN, normalise};
+})();
+
+/* ─────────────── PROPERTY ───────────────
+   The single source of truth. The address point, the parcel and the building
+   are three different things and are kept apart deliberately: a geocoder
+   returns the first, and dropping a house on it puts the house in the street. */
+const Property = {
+  address:null, addressPoint:null, lat:null, lon:null,
+  granularity:null, confidence:0, source:null, boundary:null, verified:false,
+  set(r, source){
+    this.address = {street:r.street, city:r.city, county:r.county, state:r.state,
+                    postcode:r.postcode, country:r.country, display:r.display};
+    this.addressPoint = [r.lat, r.lon];
+    this.lat = r.lat; this.lon = r.lon;       // working point, user may move it
+    this.granularity = r.granularity; this.confidence = r.confidence;
+    this.source = source || 'geocode'; this.verified = false; this.boundary = null;
+    return this;
+  },
+  label(){
+    if (!this.address) return 'Your property';
+    return this.address.street || (this.address.display||'').split(',')[0] || 'Your property';
+  },
+  sub(){
+    if (!this.address) return '';
+    return [this.address.city, this.address.state, this.address.postcode].filter(Boolean).join(', ');
+  },
+  /* how far the user moved the pin from where the geocoder put it */
+  driftMetres(){
+    if (!this.addressPoint) return 0;
+    const [a,b] = this.addressPoint;
+    return Math.hypot((this.lat-a)*111132, (this.lon-b)*111320*Math.cos(a*D2R));
+  }
+};
+
+/* ─────────────── TURFGRASS ───────────────
+   Kept apart from the ornamental plant list: turf is chosen on different
+   criteria (season type, wear, mowing regime) and the honest answer is often
+   that grass is the wrong thing for the spot. */
+const TurfDB = (() => {
+  const G = (n,s,season,z0,z1,sunMin,shade,drought,traffic,mow,water,estab,maint,dormancy,note) =>
+    ({n,s,season,z:[z0,z1],sunMin,shade,drought,traffic,mow,water,estab,maint,dormancy,note});
+  const list = [
+    G('Common Bermuda','Cynodon dactylon','Warm',7,10,7,0,3,3,'1–2 in','Low','Seed or sprigs','High','Tan from first frost until April','Cheapest lawn to establish from seed, and the most aggressive. It will invade beds.'),
+    G('Hybrid Bermuda (Tifway 419)','Cynodon × magennisii','Warm',7,10,7,0,3,3,'0.5–1.5 in','Low','Sod or sprigs only','High','Tan through winter','Sports-field turf. Wants frequent low mowing and full sun to look like the picture.'),
+    G('Meyer Zoysia','Zoysia japonica','Warm',6,9,5,1,2,3,'1–2 in','Low','Sod or plugs','Moderate','Tan from frost to mid-spring','Dense enough to choke out weeds. Slow to fill in — plugs take two or three seasons.'),
+    G('Emerald Zoysia','Zoysia × "Emerald"','Warm',7,10,5,2,2,2,'0.75–1.5 in','Low','Sod','Moderate','Tan through winter','Finest texture of the zoysias and the most shade-tolerant. Thatches if overfed.'),
+    G('Centipede','Eremochloa ophiuroides','Warm',7,9,5,1,2,1,'1–2 in','Low','Seed or sod','Very low','Tan through winter','The low-input southern lawn. Wants acid soil and resents nitrogen and lime.'),
+    G('St. Augustine','Stenotaphrum secundatum','Warm',8,10,4,2,1,1,'2.5–4 in','Moderate','Sod or plugs only','Moderate','Tan through winter','The most shade-tolerant warm-season grass, but not cold-hardy above zone 8.'),
+    G('Bahiagrass','Paspalum notatum','Warm',7,10,6,1,3,2,'2–4 in','Very low','Seed','Low','Tan through winter','Coarse and open. A pasture grass pressed into lawn service on poor sandy ground.'),
+    G('Buffalograss','Bouteloua dactyloides','Warm',4,8,7,0,3,1,'2–3 in','Very low','Seed or plugs','Very low','Tan through winter','Genuinely low-water, but it wants a dry climate. Struggles in humid summers.'),
+    G('Turf-type Tall Fescue','Festuca arundinacea','Cool',4,7,4,2,2,2,'3–4 in','Moderate','Seed','Moderate','Green year-round','The workhorse of the transition zone. Overseed every fall to keep it thick.'),
+    G('Fine Fescue','Festuca rubra / ovina','Cool',3,7,2,3,2,1,'2.5–4 in','Low','Seed','Low','Green year-round','The shade grass. Takes two hours of sun where nothing else will, but hates traffic and heat.'),
+    G('Kentucky Bluegrass','Poa pratensis','Cool',3,7,6,1,1,3,'2–3 in','High','Seed or sod','High','Green year-round','Repairs itself by rhizome. Needs real water and struggles south of the transition zone.'),
+    G('Perennial Ryegrass','Lolium perenne','Cool',3,7,5,1,1,3,'1.5–2.5 in','High','Seed','Moderate','Green year-round','Germinates in a week. Mostly used to overseed dormant Bermuda for winter green.')
+  ];
+  function score(hrs, winterHrs, zone, g){
+    if (zone < g.z[0]-1 || zone > g.z[1]+1) return null;
+    const zoneFit = (zone >= g.z[0] && zone <= g.z[1]) ? 100 : 45;
+    const need = g.sunMin;
+    const sunFit = hrs >= need ? 100 : Math.max(0, 100 - (need-hrs)*(30 - g.shade*7));
+    return Math.round(clamp(0.60*sunFit + 0.40*zoneFit, 0, 99));
+  }
+  function forSpot(hrs, winterHrs, zone){
+    return list.map(g => ({g, s: score(hrs, winterHrs, zone, g)}))
+      .filter(r => r.s !== null && r.s >= 40).sort((a,b) => b.s - a.s);
+  }
+  /* the transition zone is a real place and it is worth saying so */
+  function note(zone, hrs){
+    if (hrs < 3) return null;
+    if (zone === 6 || zone === 7) return 'You are in the transition zone, where summers cook cool-season grass and winters brown out warm-season grass. Every option here is a compromise — pick which season you would rather have look good.';
+    return null;
+  }
+  return {list, forSpot, score, note};
+})();
+
+/* ─────────────── PLANT DATABASE ───────────────
+   sun = [min,max] hours of direct summer sun the plant is happy in.
+   dr/deer/poll are 0–3 scales. Swap this array for a real API later. */
+const PlantDB = (() => {
+const P = (n,s,t,z0,z1,su0,su1,moist,ht,wd,bloom,ev,nat,dr,deer,poll,maint,sp,note,tox) =>
+  ({n,s,t,z:[z0,z1],sun:[su0,su1],moist,ht,wd,bloom,ev,nat,dr,deer,poll,maint,sp,note,tox:tox||''});
+const list = [
+// ── trees
+P('Serviceberry','Amelanchier arborea','tree',4,9,4,10,['avg','moist'],'15–25 ft','10–15 ft','Early spring',0,1,1,1,3,'Low',15,'White bloom before the leaves, edible June fruit, clean orange fall colour. Fits under utility lines.'),
+P('Eastern Redbud','Cercis canadensis','tree',4,9,4,10,['dry','avg'],'20–30 ft','25–30 ft','Early spring',0,1,2,1,3,'Low',20,'Magenta bloom straight off bare branches. Short-lived but fast to look established.'),
+P('Flowering Dogwood','Cornus florida','tree',5,9,2,6,['avg'],'15–25 ft','15–25 ft','Spring',0,1,1,1,2,'Moderate',20,'Wants afternoon shade and cool mulched roots. Struggles in hot open sun.'),
+P('American Hornbeam','Carpinus caroliniana','tree',3,9,1,7,['avg','moist'],'20–30 ft','20–30 ft','—',0,1,1,2,1,'Low',20,'Muscled grey trunk, tolerates deep shade and periodic wet.'),
+P('Blackgum','Nyssa sylvatica','tree',4,9,4,12,['avg','moist'],'40–60 ft','20–30 ft','—',0,1,1,2,3,'Low',30,'The best red fall colour of any native shade tree.'),
+P('Bald Cypress','Taxodium distichum','tree',4,10,6,12,['moist','avg'],'50–70 ft','20–30 ft','—',0,1,3,3,1,'Low',30,'Handles standing water and drought both. Deciduous conifer.'),
+P('Red Maple','Acer rubrum','tree',3,9,4,12,['avg','moist'],'40–60 ft','30–40 ft','Late winter',0,1,1,1,2,'Low',30,'Fast shade. Keep it well clear of foundations and drain lines.'),
+P('Fringetree','Chionanthus virginicus','tree',3,9,4,10,['avg'],'12–20 ft','12–20 ft','Late spring',0,1,1,2,2,'Low',15,'Fleecy white bloom. Slow, and worth the wait.'),
+P('Japanese Maple','Acer palmatum','tree',5,8,2,5,['avg'],'10–20 ft','10–20 ft','—',0,0,1,2,1,'Low',12,'Leaf scorches in full afternoon sun. Morning light is ideal.'),
+P('Crape Myrtle','Lagerstroemia indica','tree',6,10,6,12,['dry','avg'],'10–25 ft','8–15 ft','Summer',0,0,3,2,2,'Low',12,'Needs six hours or it sulks and mildews. Never top it.'),
+P('Southern Magnolia','Magnolia grandiflora','tree',7,9,4,12,['avg'],'40–60 ft','25–35 ft','Summer',1,1,2,2,2,'Moderate',30,'Evergreen and sheds leaves year-round. Give it room.'),
+P('Yoshino Cherry','Prunus × yedoensis','tree',5,8,6,12,['avg'],'25–35 ft','25–35 ft','Early spring',0,0,1,1,2,'Moderate',25,'Two weeks of spectacle, then a good shade tree. Short-lived.'),
+// ── shrubs
+P('Oakleaf Hydrangea','Hydrangea quercifolia','shrub',5,9,3,6,['avg'],'6–8 ft','6–8 ft','Early summer',0,1,2,1,2,'Low',6,'Four seasons of interest. Blooms on old wood — prune right after flowering.'),
+P('Smooth Hydrangea','Hydrangea arborescens','shrub',3,9,3,6,['avg','moist'],'3–5 ft','3–5 ft','Summer',0,1,1,1,2,'Low',4,'Blooms on new wood, so cut it hard each winter.'),
+P('Virginia Sweetspire','Itea virginica','shrub',5,9,2,10,['moist','avg'],'3–5 ft','4–6 ft','Late spring',0,1,1,2,3,'Very low',4,'Takes wet feet, sun or shade. Crimson fall colour that hangs on into December.'),
+P('Inkberry Holly','Ilex glabra','shrub',4,9,4,10,['avg','moist'],'4–6 ft','4–6 ft','—',1,1,1,3,2,'Low',4,'Native evergreen alternative to boxwood. Gets leggy low down; pick a compact cultivar.'),
+P('Ninebark','Physocarpus opulifolius','shrub',3,8,6,12,['dry','avg'],'5–8 ft','5–8 ft','Late spring',0,1,3,2,2,'Low',6,'Peeling bark and dark-leaf cultivars that need real sun to hold colour.'),
+P('Buttonbush','Cephalanthus occidentalis','shrub',4,10,4,12,['moist'],'6–10 ft','6–10 ft','Summer',0,1,0,2,3,'Very low',7,'Pollinator magnet for the wettest corner of the lot.'),
+P('Summersweet','Clethra alnifolia','shrub',3,9,2,7,['moist','avg'],'4–6 ft','4–6 ft','Midsummer',0,1,1,3,3,'Low',5,'Fragrant midsummer bloom in shade — a rare combination.'),
+P('American Beautyberry','Callicarpa americana','shrub',6,10,4,9,['avg'],'4–6 ft','4–6 ft','Summer',0,1,2,2,2,'Very low',5,'Electric purple berries in fall. Cut to a foot each spring.'),
+P('Fothergilla','Fothergilla gardenii','shrub',4,8,4,9,['avg'],'3–5 ft','3–4 ft','Spring',0,1,1,2,2,'Very low',4,'Bottlebrush bloom, then orange, red and purple all on one plant.'),
+P('Arrowwood Viburnum','Viburnum dentatum','shrub',3,8,4,10,['avg'],'6–10 ft','6–10 ft','Late spring',0,1,2,2,3,'Low',7,'Bulletproof hedge shrub. Plant two clones for berry set.'),
+P('Spicebush','Lindera benzoin','shrub',4,9,1,6,['avg','moist'],'6–10 ft','6–10 ft','Early spring',0,1,1,2,3,'Very low',7,'Host plant for the spicebush swallowtail. Happy in woodland shade.'),
+P('Boxwood','Buxus sempervirens','shrub',5,9,3,8,['avg'],'2–6 ft','2–5 ft','—',1,0,2,3,0,'Moderate',3,'Evergreen structure. Watch for blight in still, damp air.',"Toxic to dogs and cats if eaten"),
+P('Sasanqua Camellia','Camellia sasanqua','shrub',7,9,3,6,['avg'],'6–10 ft','5–8 ft','Late fall',1,0,1,2,2,'Low',6,'Blooms when nothing else does. Morning sun, afternoon shade.'),
+P('Yaupon Holly','Ilex vomitoria','shrub',7,10,5,12,['dry','avg'],'8–15 ft','6–10 ft','—',1,1,3,3,2,'Very low',6,'Drought-proof evergreen once established. Dwarf forms suit foundation beds.'),
+P('Anise-tree','Illicium floridanum','shrub',6,9,0,4,['moist'],'6–10 ft','6–8 ft','Spring',1,1,0,3,1,'Very low',6,'One of the few evergreens that genuinely thrives in deep shade.'),
+P('Dwarf Yaupon','Ilex vomitoria "Nana"','shrub',7,10,5,12,['dry','avg'],'2–4 ft','3–5 ft','—',1,1,3,3,1,'Very low',3,'The low evergreen mound that boxwood pretends to be, without the blight.'),
+P('Oakleaf Sumac','Rhus aromatica "Gro-Low"','shrub',3,9,6,12,['dry'],'2–3 ft','6–8 ft','Early spring',0,1,3,3,2,'Very low',6,'Bank-holding groundcover shrub for hot dry slopes.'),
+P('Bottlebrush Buckeye','Aesculus parviflora','shrub',4,8,2,6,['avg','moist'],'8–12 ft','10–15 ft','Summer',0,1,1,3,3,'Low',12,'Big white candles in July, in shade. Suckers into a colony.',"Seeds toxic if eaten"),
+// ── perennials & grasses
+P('Purple Coneflower','Echinacea purpurea','perennial',3,9,6,12,['dry','avg'],'2–4 ft','1–2 ft','Summer',0,1,3,2,3,'Very low',2,'Leave the seedheads standing for goldfinches.'),
+P('Black-eyed Susan','Rudbeckia fulgida','perennial',3,9,6,12,['avg','dry'],'2–3 ft','1–2 ft','Summer–fall',0,1,2,2,3,'Very low',2,'Spreads politely. Blooms July to frost.'),
+P('Butterfly Weed','Asclepias tuberosa','perennial',3,9,6,12,['dry'],'1–2 ft','1–2 ft','Summer',0,1,3,3,3,'Very low',2,'Taproot hates being moved or watered. Plant it and leave it alone.'),
+P('Bee Balm','Monarda didyma','perennial',4,9,4,10,['avg','moist'],'2–4 ft','2–3 ft','Summer',0,1,1,3,3,'Low',2,'Hummingbirds. Choose a mildew-resistant cultivar and give it airflow.'),
+P('Little Bluestem','Schizachyrium scoparium','grass',3,9,6,12,['dry'],'2–3 ft','1–2 ft','Fall',0,1,3,3,1,'Very low',2,'Blue-green in summer, copper all winter. Hates rich wet soil.'),
+P('Switchgrass','Panicum virgatum','grass',4,9,6,12,['avg','moist'],'4–6 ft','2–3 ft','Late summer',0,1,3,3,1,'Very low',3,'Upright screen that stands through snow.'),
+P('Pink Muhly Grass','Muhlenbergia capillaris','grass',6,10,6,12,['dry','avg'],'2–3 ft','2–3 ft','Fall',0,1,3,3,1,'Very low',3,'A pink cloud in October. Demands sharp drainage.'),
+P('Aromatic Aster','Symphyotrichum oblongifolium','perennial',3,8,6,12,['dry','avg'],'1–2 ft','2–3 ft','Fall',0,1,3,2,3,'Very low',2,'The last thing blooming. Thrives on poor dry ground.'),
+P("Joe-Pye Weed",'Eutrochium purpureum','perennial',4,9,4,10,['moist'],'4–7 ft','2–4 ft','Late summer',0,1,0,2,3,'Low',3,'Back-of-bed anchor for a damp spot.'),
+P('Blue Wild Indigo','Baptisia australis','perennial',3,9,6,12,['dry','avg'],'3–4 ft','3–4 ft','Late spring',0,1,3,3,2,'Very low',3,'Shrub-sized and effectively permanent. Slow to start.'),
+P('Threadleaf Coreopsis','Coreopsis verticillata','perennial',3,9,6,12,['dry','avg'],'1–2 ft','1–2 ft','Summer',0,1,3,3,2,'Very low',2,'Shear it midsummer for a second flush.'),
+P('Daylily','Hemerocallis','perennial',3,9,4,12,['avg'],'1–3 ft','1–2 ft','Summer',0,0,2,1,1,'Very low',2,'The most forgiving perennial there is.',"Highly toxic to cats"),
+P('Russian Sage','Salvia yangii','perennial',4,9,6,12,['dry'],'3–4 ft','3–4 ft','Summer',0,0,3,3,3,'Very low',3,'Wants heat, gravel and neglect. Rots in wet clay.'),
+P('Catmint','Nepeta × faassenii','perennial',3,8,6,12,['dry','avg'],'1–2 ft','2–3 ft','Late spring–fall',0,0,3,3,3,'Very low',2,'Long bloom, deer ignore it, drought-proof edging.'),
+P('Autumn Joy Sedum','Hylotelephium telephium','perennial',3,9,6,12,['dry'],'1–2 ft','1–2 ft','Fall',0,0,3,2,3,'Very low',2,'Succulent foliage all season, rust-red heads into winter.'),
+P('Creeping Phlox','Phlox subulata','groundcover',3,9,6,12,['dry','avg'],'6 in','1–2 ft','Spring',1,1,3,2,2,'Very low',1,'Spills over walls and rock edges in April.'),
+P('Hosta','Hosta','perennial',3,9,0,4,['avg','moist'],'1–3 ft','1–4 ft','Summer',0,0,1,0,1,'Very low',2,'The shade standby. Deer candy — plan accordingly.'),
+P('Coral Bells','Heuchera villosa','perennial',4,9,1,6,['avg'],'1–2 ft','1–2 ft','Summer',1,1,2,3,2,'Low',1.5,'Villosa types take southern heat far better than the fancy hybrids.'),
+P('Wild Ginger','Asarum canadense','groundcover',4,8,0,3,['moist','avg'],'6 in','1 ft','Spring',0,1,1,3,1,'Very low',1,'Glossy heart-shaped carpet for dry-ish deep shade.'),
+P('Christmas Fern','Polystichum acrostichoides','perennial',3,9,0,4,['avg'],'1–2 ft','1–2 ft','—',1,1,2,3,0,'Very low',2,'Evergreen through winter, and takes root competition.'),
+P('Cinnamon Fern','Osmundastrum cinnamomeum','perennial',3,9,0,4,['moist'],'3–5 ft','2–3 ft','—',0,1,0,3,0,'Very low',3,'Big architectural fern for a wet shaded corner.'),
+P('Foamflower','Tiarella cordifolia','groundcover',4,9,0,4,['moist','avg'],'6–12 in','1–2 ft','Spring',1,1,1,3,2,'Very low',1,'Spring froth over good semi-evergreen foliage.'),
+P('Woodland Phlox','Phlox divaricata','perennial',3,8,2,5,['avg','moist'],'1 ft','1 ft','Spring',0,1,1,2,3,'Very low',1,'Fragrant blue haze under deciduous trees in April.'),
+P("Solomon's Seal",'Polygonatum biflorum','perennial',3,8,0,4,['avg'],'2–3 ft','1–2 ft','Spring',0,1,1,3,1,'Very low',2,'Arching stems and gold fall colour. Elegant in a dark bed.'),
+P('Green-and-Gold','Chrysogonum virginianum','groundcover',5,9,2,6,['avg'],'6 in','1–2 ft','Spring–summer',1,1,1,2,2,'Very low',1,'Low native carpet that keeps blooming in part shade.'),
+P('Pennsylvania Sedge','Carex pensylvanica','groundcover',3,8,0,5,['dry','avg'],'8 in','1 ft','—',0,1,2,3,0,'Very low',1,'A lawn substitute for dry shade under trees.'),
+P('Lenten Rose','Helleborus × hybridus','perennial',4,9,0,4,['avg'],'1–2 ft','1–2 ft','Late winter',1,0,2,3,1,'Very low',1.5,'Evergreen, deer-proof, blooms in February.',"Toxic to pets if eaten"),
+P('Astilbe','Astilbe','perennial',4,8,0,5,['moist'],'1–3 ft','1–2 ft','Summer',0,0,0,3,2,'Low',1.5,'Needs steady moisture or the leaves crisp brown by July.'),
+P('Japanese Forest Grass','Hakonechloa macra','grass',5,9,0,4,['moist','avg'],'1–2 ft','2 ft','—',0,0,1,3,0,'Low',1.5,'Cascading gold — the best thing there is for a shaded bed edge.'),
+P('Liriope','Liriope muscari','groundcover',5,10,1,10,['dry','avg'],'1 ft','1–2 ft','Late summer',1,0,3,3,1,'Very low',1,'Evergreen edging that survives anything. Shear it in February.'),
+// ── vines
+P('Coral Honeysuckle','Lonicera sempervirens','vine',4,9,4,10,['avg'],'10–15 ft','3–6 ft','Spring–fall',0,1,2,2,3,'Low',4,'Well-behaved native vine. Hummingbirds all summer.'),
+P('Crossvine','Bignonia capreolata','vine',6,9,4,12,['avg'],'30 ft','6 ft','Spring',1,1,2,2,3,'Low',6,'Semi-evergreen and climbs masonry unaided.'),
+P('Climbing Hydrangea','Hydrangea petiolaris','vine',4,8,0,5,['moist'],'30 ft','6 ft','Summer',0,0,0,2,2,'Low',6,'Slow for three years, then spectacular on a shaded wall.')
+];
+return {list};
+})();
+
+const TYPES = ['tree','shrub','perennial','flower','herb','grass','groundcover','vine','succulent','tropical','vegetable'];
+const TYPE_LABEL = {tree:'Trees',shrub:'Shrubs',perennial:'Perennials',flower:'Flowers',herb:'Herbs',
+  grass:'Grasses',groundcover:'Groundcovers',vine:'Vines',succulent:'Succulents',tropical:'Tropicals',vegetable:'Vegetables'};
+
+/* ─────────────── PLANT DATA LAYER ───────────────
+   The 63 curated records carry attributes no open dataset publishes
+   (native status, deer resistance, pollinator value, toxicity). Imported
+   records leave those UNDEFINED — which is not the same as false, and the
+   filters below are written to respect the difference. */
+const PlantData = (() => {
+  let imported = [], meta = null, calendar = {}, companions = {}, zoneData = {};
+  const curated = PlantDB.list.map(p => Object.assign({src:'curated'}, p));
+  function all(){ return curated.concat(imported); }
+  function ingest(payload){
+    if (!payload || !Array.isArray(payload.plants)) throw new Error('expected { meta, plants: [] }');
+    // a record with no sun range or no zone range cannot be scored; drop it
+    // A curated record beats an imported one for the SAME plain species, because
+    // the curated one carries native status, toxicity and deer data. Named
+    // cultivars are kept: 'Annabelle' is not a duplicate of Hydrangea arborescens,
+    // and 91 tomato cultivars all share one species name.
+    const key = s => (s||'').toLowerCase().replace(/['"].*$/,'').trim().split(/\s+/).slice(0,2).join(' ');
+    const curatedKeys = new Set(curated.map(p => key(p.s)));
+    const hasCultivar = s => /['"]/.test(s||'');
+    imported = payload.plants.filter(p => {
+      if (p.t === 'houseplant' || !Array.isArray(p.sun) || !Array.isArray(p.z)) return false;
+      return hasCultivar(p.s) || !curatedKeys.has(key(p.s));
+    });
+    meta = payload.meta || null;
+    calendar = payload.calendar || {};
+    companions = payload.companions || {};
+    zoneData = payload.zones || {};
+    return imported.length;
+  }
+  async function tryLoad(){
+    try{
+      const r = await fetch('./plants.json', {cache:'no-cache'});
+      if (!r.ok) return 0;
+      return ingest(await r.json());
+    }catch(e){ return 0; }
+  }
+  /* calendar rows are [indoorStart,indoorEnd,transplantStart,transplantEnd,
+     directStart,directEnd,harvestStart,harvestEnd] as month numbers, 1-12 */
+  const calendarFor = (p, zone) => (p.slug && calendar[p.slug] && calendar[p.slug][String(zone)]) || null;
+  const companionsFor = p => (p.slug && companions[p.slug]) || [];
+  const zoneInfo = zone => zoneData[String(zone)] || null;
+  return {all, ingest, tryLoad, calendarFor, companionsFor, zoneInfo,
+    get meta(){return meta;}, get counts(){
+    return {curated: curated.length, imported: imported.length}; }};
+})();
+
+/* ─────────────── RECOMMENDATION ENGINE ───────────────
+   Scores every plant against the calculated conditions of one spot. */
+const Recommend = (() => {
+  const ORDER = ['dry','avg','moist'];
+  function score(spot, zone, soil, prefs, p){
+    if (zone < p.z[0]-1 || zone > p.z[1]+1) return null;
+    const sun = spot.summer;
+    // sunlight fit — the dominant term
+    let sunFit;
+    if (sun >= p.sun[0] && sun <= p.sun[1]) sunFit = 100;
+    else if (sun < p.sun[0]) sunFit = Math.max(0, 100 - (p.sun[0]-sun)*26);
+    else sunFit = Math.max(0, 100 - (sun-p.sun[1])*13);
+    // shoulder seasons matter for anything that needs light early or late
+    const shoulder = (spot.spring + spot.fall)/2;
+    if (shoulder < p.sun[0] - 1.5) sunFit -= 8;
+    if (p.ev && spot.winter < 1 && p.sun[0] >= 4) sunFit -= 10;
+    const zoneFit = (zone >= p.z[0] && zone <= p.z[1]) ? 100 : 55;
+    const mi = ORDER.indexOf(soil);
+    const moistFit = p.moist.includes(soil) ? 100
+      : p.moist.some(m => Math.abs(ORDER.indexOf(m) - mi) === 1) ? 66 : 25;
+    let pref = 60, k = 0;
+    const bump = ok => { pref += ok ? 40 : -22; k++; };
+    // An undefined attribute means the source never recorded it. Filtering on
+    // it must EXCLUDE the record, never quietly treat unknown as a pass — the
+    // pet-safety filter is the reason this rule exists.
+    if (prefs.native)   { if (p.nat   === undefined) return null; bump(p.nat); }
+    if (prefs.deer)     { if (p.deer  === undefined) return null; bump(p.deer >= 2); }
+    if (prefs.poll)     { if (p.poll  === undefined) return null; bump(p.poll >= 2); }
+    if (prefs.drought)  { if (p.dr    === undefined) return null; bump(p.dr >= 2); }
+    if (prefs.evergreen){ if (p.ev    === undefined) return null; bump(p.ev); }
+    if (prefs.lowmaint) { if (p.maint === undefined) return null; bump(p.maint === 'Very low' || p.maint === 'Low'); }
+    if (prefs.pets)     { if (p.tox   === undefined) return null; bump(!p.tox); }
+    pref = k ? clamp(pref, 0, 100) : 75;
+    const total = 0.46*clamp(sunFit,0,100) + 0.24*zoneFit + 0.16*moistFit + 0.14*pref;
+    return Math.round(clamp(total, 0, 99));
+  }
+  function why(spot, zone, soil, p){
+    const h = n => n.toFixed(1).replace(/\.0$/,'');
+    const bits = [];
+    bits.push(`This spot averages ${h(spot.summer)} hours of direct sun in summer, `
+      + `${h((spot.spring+spot.fall)/2)} in spring and fall, and ${h(spot.winter)} in winter.`);
+    const want = p.sun[1] >= 12 ? `${p.sun[0]} hours or more` : `${p.sun[0]}–${p.sun[1]} hours`;
+    if (spot.summer >= p.sun[0] && spot.summer <= p.sun[1])
+      bits.push(`${p.n} wants ${want}, so the exposure here sits inside its range.`);
+    else if (spot.summer < p.sun[0])
+      bits.push(`${p.n} prefers ${want}, so this is a little darker than ideal — expect looser growth and fewer flowers.`);
+    else
+      bits.push(`${p.n} prefers ${want}, so this spot runs hot. It will need watering through its first two summers.`);
+    bits.push(zone >= p.z[0] && zone <= p.z[1]
+      ? `Zone ${zone} is inside its hardy range of ${p.z[0]}–${p.z[1]}.`
+      : `Zone ${zone} is just outside its usual ${p.z[0]}–${p.z[1]} range — site it in a sheltered spot.`);
+    if (!p.moist.includes(soil)) bits.push(`It prefers ${p.moist.join(' to ')} soil rather than ${soil}.`);
+    return bits.join(' ');
+  }
+  function forSpot(spot, zone, soil, prefs, types){
+    return PlantData.all().map(p => ({p, s: score(spot, zone, soil, prefs, p)}))
+      .filter(r => r.s !== null && r.s >= 70 && (!types || types.has(r.p.t)))
+      .sort((a,b) => b.s - a.s);
+  }
+  return {forSpot, why, score};
+})();
+
+/* ─────────────── APP ─────────────── */
+const S = {
+  lat:35.0456, lon:-85.3097, label:'', sub:'', zone:7, zoneLabel:'7b', soil:'avg', horizon:8,
+  objects:[], date:new Date(new Date().getFullYear(),5,21,14,0,0), years:0,
+  spot:null, spotData:null, plan:[], tab:'sun', siteUse:'patio', siteWant:null, sweep:null, petSafe:false,
+  rooms:[], selRoom:null, indoorRes:null, indoorSpot:null,
+  prefs:{native:false,deer:false,poll:false,drought:false,evergreen:false,lowmaint:false,pets:false},
+  types:null, showVeg:false, query:'', selPlant:null, layers:{sat:true, shadow:true, heat:false}
+};
+let map, satL, litL, shadowL, footL, planL, heatL, spotM, markers = {};
+const FT = m => m*3.28084, M = ft => ft/3.28084;
+const fmtT = d => d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+const fmtD = d => d.toLocaleDateString([], {month:'long', day:'numeric'});
+const h1 = n => n.toFixed(1).replace(/\.0$/,'');
+
+function zoneFromLatLon(lat, lon){
+  let z = 11 - (Math.abs(lat) - 25)*0.30;
+  if (lon < -118 && lat > 33) z += 2.0;            // Pacific marine influence
+  else if (lon < -104) z -= 0.5;                   // interior west elevation
+  return clamp(Math.round(z), 3, 10);
+}
+
+/* ── landing demo ── */
+Geo.origin(S.lat, S.lon);
+const demoObjs = [
+  {type:'building', x:-5, y:3, w:13, d:9, rot:0, h:6.7},
+  {type:'tree', x:9, y:-3, r:3.6, h:9, deciduous:1}
+];
+const demoBed = [0,-7];
+function drawDemo(){
+  const svg = $('#demoSvg'); if (!svg) return;
+  const mins = +$('#demoTime').value;
+  const d = new Date(new Date().getFullYear(), 5, 21, Math.floor(mins/60), mins%60);
+  const pos = Solar.position(S.lat, S.lon, d);
+  const px = (x,y) => [200 + x*9.6, 150 - y*9.6];
+  let g = '<rect x="0" y="0" width="400" height="300" fill="#EFE9DE"/>';
+  for (let i=-4;i<=4;i++){ const [x] = px(i*5,0), [,y] = px(0,i*5);
+    g += `<line x1="${x}" y1="0" x2="${x}" y2="300" stroke="#DED7C9" stroke-width=".5"/>`
+      +  `<line x1="0" y1="${y}" x2="400" y2="${y}" stroke="#DED7C9" stroke-width=".5"/>`; }
+  if (pos.alt > 0.6) for (const o of demoObjs){
+    const poly = Shadow.cast(o, pos.alt, pos.az); if (!poly) continue;
+    g += `<polygon points="${poly.map(p=>px(p[0],p[1]).join(',')).join(' ')}" fill="#16291F" opacity=".26"/>`;
+  }
+  for (const o of demoObjs){
+    const f = Shadow.footprint(o).map(p=>px(p[0],p[1]));
+    g += `<polygon points="${f.map(p=>p.join(',')).join(' ')}" fill="${o.type==='tree'?'#2E5B41':'#FAF8F4'}" stroke="#1F3D2E" stroke-width="1.2"/>`;
+  }
+  const [bx,by] = px(demoBed[0], demoBed[1]);
+  g += `<circle cx="${bx}" cy="${by}" r="7" fill="none" stroke="#B8842A" stroke-width="1.6"/>`
+    +  `<circle cx="${bx}" cy="${by}" r="2.4" fill="#B8842A"/>`;
+  if (pos.alt > 0){
+    const b = pos.az*D2R, R = 128;
+    g += `<circle cx="${200+R*Math.sin(b)}" cy="${150-R*Math.cos(b)}" r="${5+pos.alt/9}" fill="#E3A63C"/>`;
+  }
+  svg.innerHTML = g;
+  demoHours();
+  $('#demoWhen').textContent = `June 21 · ${fmtT(d)}`;
+}
+function demoHours(){
+  const y = new Date().getFullYear();
+  const ev = Solar.events(S.lat, S.lon, new Date(y,5,21));
+  let mins = 0;
+  for (let t = ev.rise.getTime(); t <= ev.set.getTime(); t += 6e5){
+    const p = Solar.position(S.lat, S.lon, new Date(t));
+    if (p.alt <= 0.6) continue;
+    const lit = !demoObjs.some(o => { const s = Shadow.cast(o, p.alt, p.az); return s && Shadow.inside(s, demoBed[0], demoBed[1]); });
+    if (lit) mins += 10;
+  }
+  $('#demoHrs').textContent = `${h1(mins/60)} hours of direct sun`;
+}
+
+/* ── address search, verification and placement ──
+   Flow, deliberately explicit:
+     typing -> MapAPI.searchAddresses (sequenced, stale results discarded)
+     -> chooseResult -> Property.set  (canonical, unverified)
+     -> enterLocate  (map + draggable pin, user confirms or corrects)
+     -> confirmLocation -> Property.verified -> Geo.origin -> begin()
+   Nothing downstream geocodes anything. The house footprint is created at the
+   CONFIRMED pin, never at the raw geocoder point. */
+let searchTimer = null, lastResults = [];
+const hint = (t, bad) => { const e = $('#hint'); e.textContent = t; e.className = 'hint' + (bad ? ' bad' : ''); };
+const hideSuggest = () => $('#suggest').classList.add('hide');
+
+async function runSearch(q){
+  if (q.trim().length < 3){ hideSuggest(); return; }
+  hint('Searching\u2026');
+  try{
+    const res = await MapAPI.searchAddresses(q);
+    if (res === null) return;                       // a newer search won; discard silently
+    if (!res.length){
+      hideSuggest();
+      hint('No match for that. Try adding the city and state, or drop a pin instead.', true);
+      $('#manual').classList.remove('hide');
+      return;
+    }
+    lastResults = res;
+    $('#suggest').innerHTML = res.map((r,i) => `<div data-i="${i}">${esc(r.display)}
+      <div class="mono" style="color:${r.confidence>=0.9?'var(--forest)':'var(--muted-l)'};margin-top:3px">${esc(MapAPI.GRAN[r.granularity])}</div></div>`).join('');
+    $('#suggest').classList.remove('hide');
+    $('#suggest').querySelectorAll('div[data-i]').forEach(el =>
+      el.addEventListener('click', () => chooseResult(lastResults[+el.dataset.i])));
+    hint(res[0].confidence >= 0.9 ? 'Pick your address.' : 'No exact rooftop match — pick the closest and move the pin.');
+  }catch(e){
+    if (e.name === 'AbortError') return;
+    hint('The address lookup is not responding. You can drop a pin on the map instead.', true);
+    $('#manual').classList.remove('hide');
+  }
+}
+function chooseResult(r){ Property.set(r, 'geocode'); hideSuggest(); enterLocate(); }
+
+async function useMyLocation(){
+  if (!navigator.geolocation){ hint('This browser will not share a location.', true); return; }
+  hint('Asking your device for its location\u2026');
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const {latitude:la, longitude:lo} = pos.coords;
+    try{
+      const r = await MapAPI.reverseGeocode(la, lo);
+      r.lat = la; r.lon = lo; r.granularity = 'building'; r.confidence = 0.8;
+      Property.set(r, 'device');
+    }catch(e){
+      Property.set({lat:la, lon:lo, display:'Dropped pin', street:'', city:'', county:'', state:'',
+        postcode:'', country:'', granularity:'building', confidence:0.5}, 'device');
+    }
+    enterLocate();
+  }, () => hint('Could not get your location. Type an address instead.', true), {enableHighAccuracy:true, timeout:10000});
+}
+
+let locateM = null;
+function enterLocate(){
+  $('#landing').classList.add('hide');
+  $('#work').classList.remove('hide');
+  $('#waddr').textContent = Property.label();
+  $('#wsub').textContent = Property.sub() || 'Confirm the location';
+  $('#wzone').textContent = '—';
+  initMap(Property.lat, Property.lon, MapAPI.zoomFor(Property.granularity));
+  $('#sheet').classList.add('small');
+  $('#locateBar').classList.remove('hide');
+  $('#locateWhy').textContent = MapAPI.GRAN[Property.granularity];
+  $('#locateAddr').textContent = Property.address.display || Property.label();
+  if (locateM) map.removeLayer(locateM);
+  locateM = L.marker([Property.lat, Property.lon], {draggable:true, autoPan:true,
+    icon: L.divIcon({className:'', iconSize:[24,24], html:
+      '<div style="width:24px;height:24px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:#B8842A;border:2px solid #FAF8F4;box-shadow:0 2px 6px rgba(0,0,0,.4)"></div>'})}).addTo(map);
+  locateM.on('dragend', () => {
+    const p = locateM.getLatLng(); Property.lat = p.lat; Property.lon = p.lng;
+    const dm = Property.driftMetres();
+    $('#locateWhy').textContent = dm > 3
+      ? `Pin moved ${FT(dm).toFixed(0)} ft from the address point.`
+      : MapAPI.GRAN[Property.granularity];
+  });
+  setTimeout(() => map.invalidateSize(), 180);
+}
+
+async function confirmLocation(){
+  Property.verified = true;
+  if (locateM){ map.removeLayer(locateM); locateM = null; }
+  $('#locateBar').classList.add('hide');
+  $('#sheet').classList.remove('small');
+  await begin();
+}
+
+/* ── the analyze sequence ── */
+const STEPS = ['Confirming your property','Mapping your location','Estimating your hardiness zone',
+  "Calculating the sun's path",'Projecting shadows','Creating planting zones','Finding plants that fit'];
+const wait = ms => new Promise(r => setTimeout(r, ms));
+
+/* the one place property coordinates become app state */
+function applyProperty(){
+  S.lat = Property.lat; S.lon = Property.lon;
+  Geo.origin(Property.lat, Property.lon);
+}
+
+async function begin(){
+  applyProperty();
+  S.plan = []; S.spot = null; S.spotData = null; S.years = 0;
+  S.rooms = []; S.selRoom = null; S.indoorRes = null; S.indoorSpot = null;
+  if (spotM && map){ map.removeLayer(spotM); spotM = null; }
+  if (planL) planL.clearLayers();
+  $('#loading').classList.remove('hide');
+  $('#steps').innerHTML = STEPS.map((s,i)=>`<div class="step" id="st${i}"><span class="tick"></span>${s}</div>`).join('');
+  const tick = async i => { const e = $('#st'+i); e.classList.add('now'); await wait(150); e.classList.remove('now'); e.classList.add('on'); };
+
+  await tick(0); await tick(1);
+  S.zone = zoneFromLatLon(S.lat, S.lon); S.zoneLabel = S.zone + 'b'; await tick(2);
+  // house footprint at the CONFIRMED pin, not the geocoder's address point
+  S.objects = [{id:'o1', type:'building', name:'House', lat:S.lat, lng:S.lon, w:13, d:9, rot:0, h:M(22)}];
+  await tick(3);
+  drawObjects(); computeAnalysis(); await tick(4);
+  await tick(5); await tick(6);
+  $('#waddr').textContent = Property.label();
+  $('#wsub').textContent = Property.sub() || `${S.lat.toFixed(4)}, ${S.lon.toFixed(4)}`;
+  $('#wzone').textContent = 'Zone ' + S.zoneLabel;
+  S.tab = 'yard'; syncTabs(); renderTab(); updateSun();
+  await wait(180);
+  $('#loading').classList.add('hide');
+  setTimeout(() => map.invalidateSize(), 220);
+}
+
+/* ── map ── */
+function initMap(lat, lon, zoom){
+  if (map){ map.setView([lat,lon], zoom); return; }
+  map = L.map('map', {zoomControl:false, attributionControl:true}).setView([lat,lon], zoom);
+  L.control.zoom({position:'bottomright'}).addTo(map);
+  satL = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {maxZoom:22, maxNativeZoom:19, attribution:'Imagery © Esri'}).addTo(map);
+  litL = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    {maxZoom:22, maxNativeZoom:19, attribution:'© OpenStreetMap, © CARTO'});
+  shadowL = L.layerGroup().addTo(map);
+  footL = L.layerGroup().addTo(map);
+  planL = L.layerGroup().addTo(map);
+  map.on('click', e => {
+    if (locateM){ locateM.setLatLng(e.latlng); locateM.fire('dragend'); return; }
+    if (placingType) { placeObject(e.latlng); return; }
+    setSpot(e.latlng);
+  });
+}
+let placingType = null;
+function placeObject(latlng){
+  const t = placingType; placingType = null;
+  $('#placing').classList.add('hide');
+  const id = 'o' + (Date.now()%1e6);
+  const base = {id, lat:latlng.lat, lng:latlng.lng, rot:0};
+  if (t === 'tree') S.objects.push({...base, type:'tree', name:'Tree', r:M(20), h:M(35), deciduous:1, growth:0.4, matureH:M(55), matureR:M(30)});
+  if (t === 'garage') S.objects.push({...base, type:'building', name:'Garage / shed', w:7, d:6, h:M(12)});
+  if (t === 'fence')  S.objects.push({...base, type:'building', name:'Fence', w:12, d:0.3, h:M(6)});
+  if (t === 'neighbor') S.objects.push({...base, type:'building', name:'Neighboring building', w:12, d:10, h:M(24)});
+  drawObjects(); computeAnalysis(); renderTab();
+}
+function drawObjects(){
+  footL.clearLayers();
+  Object.values(markers).forEach(m => map.removeLayer(m)); markers = {};
+  for (const o of S.objects){
+    const aged = Shadow.aged(o, S.years);
+    const pts = Shadow.footprint(aged).map(p => Geo.ll(p[0], p[1]));
+    const fc = o.type==='feature' ? (FEATURES[o.kind]||{}).fill || '#B8A88A' : '#FAF8F4';
+    L.polygon(pts, {color: o.type==='feature' ? fc : '#1F3D2E', weight:1.6, fillColor:fc, interactive:false,
+      fillOpacity: o.type==='tree' ? .22 : o.type==='feature' ? .62 : .5,
+      dashArray: o.type==='tree' ? '4 3' : null}).addTo(footL);
+    const m = L.marker([o.lat,o.lng], {draggable:true, icon: L.divIcon({className:'', iconSize:[13,13],
+      html:'<div style="width:13px;height:13px;border-radius:50%;background:#1F3D2E;border:2px solid #FAF8F4;box-shadow:0 1px 3px rgba(0,0,0,.4)"></div>'})}).addTo(map);
+    m.on('drag', () => { o.lat = m.getLatLng().lat; o.lng = m.getLatLng().lng; drawFootprintsOnly(); drawShadows(); });
+    m.on('dragend', () => { computeAnalysis(); renderTab(); });
+    markers[o.id] = m;
+  }
+  drawShadows();
+}
+function drawFootprintsOnly(){
+  footL.clearLayers();
+  for (const o of S.objects){
+    const pts = Shadow.footprint(Shadow.aged(o, S.years)).map(p => Geo.ll(p[0], p[1]));
+    const fc = o.type==='feature' ? (FEATURES[o.kind]||{}).fill || '#B8A88A' : '#FAF8F4';
+    L.polygon(pts, {color: o.type==='feature' ? fc : '#1F3D2E', weight:1.6, fillColor:fc, interactive:false,
+      fillOpacity: o.type==='tree' ? .22 : o.type==='feature' ? .62 : .5,
+      dashArray: o.type==='tree' ? '4 3' : null}).addTo(footL);
+  }
+}
+function drawShadows(){
+  if (!shadowL) return;
+  shadowL.clearLayers();
+  if (!S.layers.shadow) return;
+  const pos = Solar.position(S.lat, S.lon, S.date);
+  if (pos.alt <= 0.6) return;
+  for (const o of S.objects){
+    const poly = Shadow.cast(Shadow.aged(o, S.years), pos.alt, pos.az);
+    if (!poly) continue;
+    L.polygon(poly.map(p => Geo.ll(p[0], p[1])),
+      {stroke:false, interactive:false, fillColor:'#16291F', fillOpacity: Shadow.opacity(o, S.date.getMonth())*0.38}).addTo(shadowL);
+  }
+}
+function drawHeat(){
+  if (heatL){ map.removeLayer(heatL); heatL = null; }
+  if (!S.layers.heat || !Analysis.ready) return;
+  const c = Analysis.heatCanvas(); if (!c) return;
+  const sw = Geo.ll(-Analysis.SPAN/2, -Analysis.SPAN/2), ne = Geo.ll(Analysis.SPAN/2, Analysis.SPAN/2);
+  heatL = L.imageOverlay(c.toDataURL(), [sw, ne], {opacity:.72, interactive:false}).addTo(map);
+  heatL.bringToFront();
+}
+function setSpot(latlng){
+  S.spot = latlng;
+  const [x,y] = Geo.xy(latlng.lat, latlng.lng);
+  S.spotData = Analysis.at(x,y);
+  if (spotM) map.removeLayer(spotM);
+  spotM = L.circleMarker(latlng, {radius:8, color:'#B8842A', weight:2.5, fillColor:'#E3A63C', fillOpacity:.55}).addTo(map);
+  if (S.tab !== 'plants'){ S.tab = 'plants'; syncTabs(); }
+  renderTab();
+}
+let analysisT;
+function computeAnalysis(){
+  clearTimeout(analysisT);
+  analysisT = setTimeout(() => {
+    Analysis.run(S.lat, S.lon, S.objects, S.years, S.horizon);
+    if (S.spot){ const [x,y] = Geo.xy(S.spot.lat, S.spot.lng); S.spotData = Analysis.at(x,y); }
+    drawHeat();
+    S.sweep = null;
+    if (S.selRoom) calcIndoor();
+    if (S.tab === 'yard' || S.tab === 'plants' || S.tab === 'site' || S.tab === 'indoor') renderTab();
+  }, 60);
+}
+
+/* ─────────────── SHEET RENDERING ─────────────── */
+const parseFt = s => { const m = String(s).match(/([\d.]+)(?:\D+([\d.]+))?/); if(!m) return 3;
+  return m[2] ? (+m[1]+ +m[2])/2 : +m[1]; };
+const SUNCOL = ['#E3A63C','#D9BE7A','#7E9A86','#3C5A4A'];
+const SUNLBL = ['Full sun','Part sun','Part shade','Full shade'];
+
+function renderTab(){
+  const b = $('#body');
+  const views = {sun:tabSun, yard:tabYard, site:tabSite, indoor:tabIndoor, plants:tabPlants, plan:tabPlan};
+  const wires = {sun:wireSun, yard:wireYard, site:wireSite, indoor:wireIndoor, plants:wirePlants, plan:wirePlan};
+  if (typeof views[S.tab] !== 'function'){ b.innerHTML = '<div class="empty"><p>That view failed to load.</p></div>'; return; }
+  try { b.innerHTML = views[S.tab](); wires[S.tab](); }
+  catch(err){
+    console.error('tab "'+S.tab+'" failed:', err);
+    b.innerHTML = '<div class="warn"><b>This view hit an error</b>'+String(err.message||err)+'</div>';
+  }
+}
+
+/* ── SUN ── */
+function tabSun(){
+  const doy = Math.floor((S.date - new Date(S.date.getFullYear(),0,0))/864e5);
+  const mins = S.date.getHours()*60 + S.date.getMinutes();
+  const ev = Solar.events(S.lat, S.lon, S.date);
+  return `
+  <div class="eyebrow mono">Follow the sun</div>
+  <div class="ctlrow">
+    <label><span class="mono">Date</span><b id="dLab">${fmtD(S.date)}</b></label>
+    <input type="range" id="dSlide" min="1" max="365" value="${doy}" aria-label="Day of year">
+    <div class="presets">
+      <button class="pill" data-doy="79">Spring equinox</button>
+      <button class="pill" data-doy="172">Summer solstice</button>
+      <button class="pill" data-doy="265">Fall equinox</button>
+      <button class="pill" data-doy="355">Winter solstice</button>
+    </div>
+  </div>
+  <div class="ctlrow">
+    <label><span class="mono">Time</span><b id="tLab">${fmtT(S.date)}</b></label>
+    <input type="range" id="tSlide" min="0" max="1439" step="5" value="${mins}" aria-label="Time of day">
+  </div>
+  <div class="slab">
+    <div class="rowline"><span class="k">Sunrise</span><span class="v">${ev.rise?fmtT(ev.rise):'—'}</span></div>
+    <div class="rowline"><span class="k">Solar noon</span><span class="v">${fmtT(ev.noon)}</span></div>
+    <div class="rowline"><span class="k">Sunset</span><span class="v">${ev.set?fmtT(ev.set):'—'}</span></div>
+    <div class="rowline"><span class="k">Daylight</span><span class="v">${ev.rise?h1((ev.set-ev.rise)/36e5)+' hours':'—'}</span></div>
+  </div>
+  <div class="slab">
+    <div class="rowline"><span class="k">Sun direction</span><span class="v" id="aDir">—</span></div>
+    <div class="rowline"><span class="k">Sun height</span><span class="v" id="aHt">—</span></div>
+    <div class="rowline"><span class="k">Shadows fall toward</span><span class="v" id="aShd">—</span></div>
+  </div>
+  <details class="adv"><summary>Advanced details</summary>
+    <div class="rowline"><span class="k">Solar azimuth</span><span class="v mono" id="aAz">—</span></div>
+    <div class="rowline"><span class="k">Solar elevation</span><span class="v mono" id="aAlt">—</span></div>
+    <div class="rowline"><span class="k">Declination</span><span class="v mono" id="aDec">—</span></div>
+    <div class="rowline"><span class="k">Latitude / longitude</span><span class="v mono">${S.lat.toFixed(5)}, ${S.lon.toFixed(5)}</span></div>
+    <p class="conf">Times are shown in this device's time zone, including daylight saving. Position is computed with the NOAA solar algorithm.</p>
+  </details>`;
+}
+function wireSun(){
+  $('#dSlide').addEventListener('input', e => {
+    const d = new Date(S.date.getFullYear(), 0, +e.target.value);
+    S.date = new Date(d.getFullYear(), d.getMonth(), d.getDate(), S.date.getHours(), S.date.getMinutes());
+    $('#dLab').textContent = fmtD(S.date); updateSun();
+  });
+  $('#tSlide').addEventListener('input', e => {
+    const v = +e.target.value;
+    S.date.setHours(Math.floor(v/60), v%60, 0, 0);
+    $('#tLab').textContent = fmtT(S.date); updateSun();
+  });
+  document.querySelectorAll('[data-doy]').forEach(el => el.addEventListener('click', () => {
+    const d = new Date(S.date.getFullYear(), 0, +el.dataset.doy);
+    S.date = new Date(d.getFullYear(), d.getMonth(), d.getDate(), S.date.getHours(), S.date.getMinutes());
+    renderTab(); updateSun();
+  }));
+}
+function updateSun(){
+  const p = Solar.position(S.lat, S.lon, S.date);
+  const up = p.alt > 0;
+  $('#sunDir').textContent = up ? Solar.compass(p.az) : 'Below the horizon';
+  $('#sunHt').textContent  = up ? `${p.alt.toFixed(0)}° above the horizon` : 'No direct light';
+  const set = (id,v) => { const e = $(id); if (e) e.textContent = v; };
+  set('#aDir', up ? Solar.compass(p.az) : 'Below horizon');
+  set('#aHt',  up ? `${p.alt.toFixed(0)}° above horizon` : '—');
+  set('#aShd', up ? Solar.compass(p.az+180) : '—');
+  set('#aAz',  p.az.toFixed(1)+'°'); set('#aAlt', p.alt.toFixed(1)+'°'); set('#aDec', p.decl.toFixed(2)+'°');
+  drawShadows();
+}
+
+/* ── YARD ── */
+function tabYard(){
+  const bd = Analysis.breakdown(S.objects);
+  const zones = Analysis.zones(S.objects);
+  let h = `<div class="eyebrow mono">Your yard</div>`;
+  if (bd){
+    h += `<div class="expbar">${bd.map((v,i)=>`<i style="width:${v}%;background:${SUNCOL[i]}"></i>`).join('')}</div>
+      <div class="explegend">${bd.map((v,i)=>`<span><em style="background:${SUNCOL[i]}"></em>${SUNLBL[i]}<b>${v}%</b></span>`).join('')}</div>`;
+  }
+  if (zones.length){
+    h += `<div style="margin-top:24px" class="eyebrow mono">Planting zones</div>`;
+    for (const z of zones) h += `<div class="slab" style="padding:13px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <b style="font-weight:500">${z.name}</b>
+        <span class="mono" style="color:var(--gold)">${z.cls}</span></div>
+      <div class="mono" style="color:var(--muted-l);margin-top:3px">${esc(z.seasonal)}</div>
+      <div class="rowline" style="border:none;padding:8px 0 0"><span class="k">Summer / winter</span>
+        <span class="v">${h1(z.summer)} hrs · ${h1(z.winter)} hrs</span></div>
+      <button class="btn ghost" data-zone="${esc(z.name)}" style="margin-top:9px;padding:9px;font-size:.85rem">See plants for this zone</button>
+    </div>`;
+  }
+  h += `<div style="margin-top:24px" class="eyebrow mono">What's casting shade</div>`;
+  for (const o of S.objects.filter(o => o.h > 0)){
+    const a = Shadow.aged(o, S.years);
+    h += `<div class="obj"><div class="ic">${o.type==='tree'?'▲':'▬'}</div><div class="bd">
+      <b>${esc(o.name)}</b>
+      <div class="sub">${o.type==='tree'
+        ? `${FT(a.h).toFixed(0)} ft tall · ${FT(a.r*2).toFixed(0)} ft spread${S.years?` at ${S.years} yrs`:''}`
+        : `${FT(a.h).toFixed(0)} ft tall · ${FT(a.w).toFixed(0)} × ${FT(a.d).toFixed(0)} ft`}</div>
+      <div class="minirow">
+        <div><label>Height ft</label><input type="number" data-id="${o.id}" data-k="h" value="${FT(o.h).toFixed(0)}"></div>
+        ${o.type==='tree'
+          ? `<div><label>Spread ft</label><input type="number" data-id="${o.id}" data-k="r2" value="${FT(o.r*2).toFixed(0)}"></div>
+             <div><label>Leaf</label><select data-id="${o.id}" data-k="deciduous"><option value="1"${o.deciduous?' selected':''}>Deciduous</option><option value="0"${!o.deciduous?' selected':''}>Evergreen</option></select></div>`
+          : `<div><label>Width ft</label><input type="number" data-id="${o.id}" data-k="w" value="${FT(o.w).toFixed(0)}"></div>
+             <div><label>Depth ft</label><input type="number" data-id="${o.id}" data-k="d" value="${FT(o.d).toFixed(0)}"></div>`}
+      </div>
+      ${o.type!=='tree' ? `<div class="minirow"><div><label>Rotation ${o.rot|0}°</label>
+        <input type="range" min="0" max="179" value="${o.rot|0}" data-id="${o.id}" data-k="rot"></div></div>`:''}
+    </div><button class="x" data-del="${o.id}" aria-label="Remove">✕</button></div>`;
+  }
+  h += `<div class="addrow">
+      <button data-add="tree">+ Tree</button>
+      <button data-add="garage">+ Garage / shed</button>
+      <button data-add="fence">+ Fence</button>
+      <button data-add="neighbor">+ Neighbor's building</button>
+    </div>
+    <p class="conf">Drag any marker on the map to move it. Building heights default to typical values — measure or estimate yours for a better result.</p>
+    <div style="margin-top:24px" class="eyebrow mono">Surrounding tree line</div>
+    <div class="ctlrow" style="margin-top:8px">
+      <label><span class="k" style="color:var(--muted)">How high the horizon sits around the lot</span><b id="hzLab">${S.horizon}°</b></label>
+      <input type="range" id="hzSlide" min="0" max="25" value="${S.horizon}" aria-label="Horizon angle">
+      <p class="conf" style="margin-top:6px">0° is open prairie. 8° suits a typical suburban street with mature street trees. 20° is a wooded lot or a valley. Low winter sun is the first thing a tree line takes away.</p>
+    </div>
+    <div style="margin-top:22px" class="eyebrow mono">See the yard in the future</div>
+    <div class="presets">${[0,5,10,20].map(y=>`<button class="pill" data-yr="${y}" aria-pressed="${S.years===y}">${y?y+' years':'Today'}</button>`).join('')}</div>
+    <p class="conf">Trees grow into their mature size at roughly 16 inches a year. Shadows, sun hours and plant matches all update.</p>`;
+  return h;
+}
+function wireYard(){
+  document.querySelectorAll('[data-k]').forEach(el => el.addEventListener('change', () => {
+    const o = S.objects.find(x => x.id === el.dataset.id); if (!o) return;
+    const v = +el.value;
+    if (el.dataset.k === 'r2'){ o.r = M(v)/2; o.matureR = Math.max(o.matureR||0, o.r); }
+    else if (el.dataset.k === 'h'){ o.h = M(v); o.matureH = Math.max(o.matureH||0, o.h); }
+    else if (el.dataset.k === 'deciduous') o.deciduous = +el.value;
+    else if (el.dataset.k === 'rot') o.rot = v;
+    else o[el.dataset.k] = M(v);
+    drawObjects(); computeAnalysis(); renderTab();
+  }));
+  document.querySelectorAll('[data-k="rot"]').forEach(el => el.addEventListener('input', () => {
+    const o = S.objects.find(x => x.id === el.dataset.id); if (!o) return;
+    o.rot = +el.value; drawFootprintsOnly(); drawShadows();
+  }));
+  document.querySelectorAll('[data-del]').forEach(el => el.addEventListener('click', () => {
+    S.objects = S.objects.filter(o => o.id !== el.dataset.del);
+    drawObjects(); computeAnalysis(); renderTab();
+  }));
+  document.querySelectorAll('[data-add]').forEach(el => el.addEventListener('click', () => {
+    placingType = el.dataset.add;
+    $('#placing').classList.remove('hide');
+    $('#sheet').classList.add('small');
+  }));
+  const hz = $('#hzSlide');
+  if (hz){
+    hz.addEventListener('input', () => { $('#hzLab').textContent = hz.value + '\u00B0'; });
+    hz.addEventListener('change', () => { S.horizon = +hz.value; computeAnalysis(); });
+  }
+  document.querySelectorAll('[data-yr]').forEach(el => el.addEventListener('click', () => {
+    S.years = +el.dataset.yr;
+    drawObjects(); computeAnalysis(); renderTab();
+  }));
+  document.querySelectorAll('[data-zone]').forEach(el => el.addEventListener('click', () => {
+    const z = Analysis.zones(S.objects).find(x => x.name === el.dataset.zone);
+    if (!z) return;
+    S.spotData = z; S.spot = L.latLng(z.anchor[0], z.anchor[1]);
+    if (spotM) map.removeLayer(spotM);
+    spotM = L.circleMarker(S.spot, {radius:8, color:'#B8842A', weight:2.5, fillColor:'#E3A63C', fillOpacity:.55}).addTo(map);
+    map.panTo(S.spot);
+    S.tab = 'plants'; syncTabs(); renderTab();
+  }));
+}
+
+/* ── SITE ── */
+const FEATURES = {pool:{w:9,d:4.5,fill:'#3E7C93'}, patio:{w:5,d:5,fill:'#B8A88A'},
+  dining:{w:4,d:4,fill:'#B8A88A'}, firepit:{w:2.5,d:2.5,fill:'#9C6B4A'},
+  veg:{w:6,d:3,fill:'#5F7F4B'}, coffee:{w:2.5,d:2.5,fill:'#B8A88A'}};
+const WANTLBL = {sun:'Mostly sun', mixed:'Sun and shade', shade:'Mostly shade'};
+
+function tabSite(){
+  const house = S.objects.find(o => o.type === 'building' && o.h > 0);
+  if (!house) return `<div class="empty"><h3 class="serif">Add a building first</h3>
+    <p>Site planning works off the house footprint. Open the Yard tab and place one.</p></div>`;
+
+  let h = `<div class="eyebrow mono">House orientation</div>
+    <div class="ctlrow">
+      <label><span class="k" style="color:var(--muted)">Rotate the footprint</span><b id="rotLab">${house.rot|0}°</b></label>
+      <input type="range" id="rotSlide" min="0" max="179" value="${house.rot|0}" aria-label="House rotation">
+    </div>`;
+
+  const clear = Site.walls(S.lat, S.lon, [house], S.years, S.horizon, house, house.rot|0);
+  const act   = Site.walls(S.lat, S.lon, S.objects, S.years, S.horizon, house, house.rot|0);
+  h += `<div class="slab" style="padding:12px">`;
+  act.forEach((w,i) => {
+    const ob = clear[i].summer > 0.2 ? clamp(1 - w.summer/clear[i].summer, 0, 1) : 0;
+    h += `<div class="rowline"><span class="k">${w.dir} wall · ${FT(w.len).toFixed(0)} ft</span>
+      <span class="v">${h1(w.summer)} h summer · ${h1(w.winter)} h winter${ob>0.15?` · ${(ob*100).toFixed(0)}% blocked`:''}</span></div>`;
+  });
+  h += `</div>
+    <button class="btn ghost" id="sweepBtn">Find the best orientation</button>
+    <div id="sweepOut"></div>`;
+
+  h += `<div style="margin-top:26px" class="eyebrow mono">Where should it go?</div>
+    <div class="presets">${Object.keys(Site.USES).map(k =>
+      `<button class="pill" data-use="${k}" aria-pressed="${S.siteUse===k}">${Site.USES[k].label}</button>`).join('')}</div>
+    <div class="presets" style="margin-top:8px">${Object.keys(WANTLBL).map(k =>
+      `<button class="pill" data-want="${k}" aria-pressed="${S.siteWant===k}">${WANTLBL[k]}</button>`).join('')}</div>
+    <button class="btn" id="findBtn">Find the best locations</button>
+    <div id="findOut"></div>`;
+
+  const placed = S.objects.filter(o => !o.h);
+  if (placed.length){
+    h += `<div style="margin-top:24px" class="eyebrow mono">Placed features</div>`;
+    for (const o of placed){
+      const [x,y] = Geo.xy(o.lat, o.lng); const d = Analysis.at(x,y);
+      h += `<div class="obj"><div class="ic">▢</div><div class="bd"><b>${esc(o.name)}</b>
+        <div class="sub">${d ? `${h1(d.grow)} h summer sun · morning ${h1(d.morning)} h · afternoon ${h1(d.midday)} h · evening ${h1(d.evening)} h` : '—'}</div></div>
+        <button class="x" data-del="${o.id}">✕</button></div>`;
+    }
+  }
+
+  h += `<div style="margin-top:26px" class="eyebrow mono">Windows &amp; indoor light</div>
+    <p class="conf" style="margin-top:0">Direct sun measured at the middle of each elevation, for this property and its obstructions. Indoor bands assume clear glass and no blinds; each step away from the window drops roughly one band.</p>
+    <div class="presets"><button class="pill" data-pet aria-pressed="${S.petSafe}">Pet-safe only</button></div>`;
+  act.forEach((w,i) => {
+    const ob = clear[i].summer > 0.2 ? clamp(1 - w.summer/clear[i].summer, 0, 1) : 0;
+    const b = IndoorDB.bandFromWall(w, ob);
+    h += `<div class="slab"><div style="display:flex;justify-content:space-between;align-items:baseline">
+        <b style="font-weight:500">${w.dir} windows</b><span class="mono" style="color:var(--gold)">${b === 'high' ? 'High light' : b === 'bright' ? 'Bright' : b === 'medium' ? 'Medium' : 'Low'}</span></div>
+      <div class="rowline" style="padding-top:8px"><span class="k">Direct sun, midday</span><span class="v">${h1(w.midday)} h summer</span></div>
+      <div class="rowline"><span class="k">Morning / evening</span><span class="v">${h1(w.morning)} h / ${h1(w.evening)} h</span></div>
+      <div class="rowline"><span class="k">Winter direct sun</span><span class="v">${h1(w.winter)} h</span></div>
+      ${ob>0.15?`<div class="rowline"><span class="k">Blocked by trees or buildings</span><span class="v">${(ob*100).toFixed(0)}%</span></div>`:''}
+      <div class="why" style="margin:10px -15px -15px"><b>What this means</b>${esc(wallAdvice(w, ob))}
+        <div style="margin-top:9px">${[[0,'At the glass'],[1,'4–8 ft in'],[2,'12 ft in']].map(([step,lbl]) => {
+          const bb = IndoorDB.drop(b, step);
+          const ps = IndoorDB.forBandName(bb, S.petSafe, 3).map(r=>r.p.n);
+          return `<div style="margin-top:4px"><b style="display:inline;color:var(--muted);font-family:'Inter Tight'">${lbl}:</b> ${ps.length?esc(ps.join(', ')):'nothing in the list fits'}</div>`;
+        }).join('')}</div>
+      </div></div>`;
+  });
+  h += `<p class="conf">This is a siting heuristic, not an energy model or a daylight simulation. It does not know about roof overhangs, glazing type, interior walls, or reflected light.</p>`;
+  return h;
+}
+
+function wallAdvice(w, ob){
+  const d = w.dir.toLowerCase();
+  if (w.midday >= 3.5 && w.winter >= 4)
+    return `Strong winter sun with high summer sun too. The best wall for large glazing, provided you shade it in summer — an overhang or a deciduous tree cuts July without touching January.`;
+  if (w.midday >= 3.5)
+    return `Heavy midday and afternoon sun with little winter payback. This is the overheating elevation. Keep glazing modest or plan exterior shading.`;
+  if (w.morning >= 2.5 && w.evening < 1)
+    return `Good morning sun that drops away before the afternoon heat. Comfortable light and an easy wall for windows.`;
+  if (w.evening >= 2)
+    return `Low, direct late-day sun that is hard to shade with an overhang because it comes in almost horizontally. Trees or vertical screening work better here.`;
+  if (ob > 0.5)
+    return `Mostly blocked by what is around the property, so direct sun is limited whatever the orientation.`;
+  return `Very little direct sun, which means even, steady light all day and no overheating. Consistent rather than bright.`;
+}
+
+function wireSite(){
+  const house = S.objects.find(o => o.type === 'building' && o.h > 0);
+  const rs = $('#rotSlide');
+  if (rs){
+    rs.addEventListener('input', () => { $('#rotLab').textContent = rs.value + '\u00B0';
+      house.rot = +rs.value; drawFootprintsOnly(); drawShadows(); });
+    rs.addEventListener('change', () => { S.sweep = null; computeAnalysis(); renderTab(); });
+  }
+  const sb = $('#sweepBtn');
+  if (sb) sb.addEventListener('click', () => {
+    sb.textContent = 'Working…';
+    setTimeout(() => {
+      const sw = Site.sweep(S.lat, S.lon, S.objects, S.years, S.horizon, house, 10);
+      const best = sw.reduce((a,c) => c.m.raw > a.m.raw ? c : a);
+      const cur  = sw.reduce((a,c) => Math.abs(c.rot-(house.rot|0)) < Math.abs(a.rot-(house.rot|0)) ? c : a);
+      const lo = Math.min(...sw.map(s=>s.m.raw)), hi = Math.max(...sw.map(s=>s.m.raw));
+      const pct = v => (hi>lo ? (v-lo)/(hi-lo) : 1);
+      let o = `<div style="display:flex;gap:2px;align-items:flex-end;height:74px;margin:16px 0 4px">`;
+      for (const s of sw) o += `<div title="${s.rot}\u00B0" style="flex:1;height:${Math.max(4,pct(s.m.raw)*100)}%;
+        background:${s===best?'var(--amber)':s===cur?'var(--forest)':'var(--sand)'};border-radius:1px"></div>`;
+      o += `</div><div class="mono" style="display:flex;justify-content:space-between;color:var(--muted-l)"><span>0°</span><span>90°</span><span>180°</span></div>`;
+      o += best.rot === cur.rot
+        ? `<div class="warn" style="margin-top:14px"><b>This is already the best orientation</b>Of the eighteen angles tested, the current one gives the most winter sun on the longest wall.</div>`
+        : `<div class="warn" style="margin-top:14px"><b>Rotating to about ${best.rot}° would help</b>
+           The face nearest south would go from ${FT(cur.m.southWall).toFixed(0)} ft to ${FT(best.m.southWall).toFixed(0)} ft of wall
+           and from ${h1(cur.m.winterSouth)} to ${h1(best.m.winterSouth)} hours of direct winter sun.
+           Late-day summer sun on the west face changes from ${h1(cur.m.westHeat)} to ${h1(best.m.westHeat)} hours.</div>
+           <button class="btn ghost" id="applyRot">Rotate the house to ${best.rot}°</button>`;
+      $('#sweepOut').innerHTML = o;
+      sb.textContent = 'Find the best orientation';
+      const ar = $('#applyRot');
+      if (ar) ar.addEventListener('click', () => { house.rot = best.rot; S.sweep = null;
+        drawObjects(); computeAnalysis(); renderTab(); });
+    }, 30);
+  });
+
+  document.querySelectorAll('[data-use]').forEach(el => el.addEventListener('click', () => {
+    S.siteUse = el.dataset.use; S.siteWant = null; renderTab(); }));
+  document.querySelectorAll('[data-want]').forEach(el => el.addEventListener('click', () => {
+    S.siteWant = S.siteWant === el.dataset.want ? null : el.dataset.want; renderTab(); }));
+  document.querySelectorAll('[data-pet]').forEach(el => el.addEventListener('click', () => {
+    S.petSafe = !S.petSafe; renderTab(); }));
+  document.querySelectorAll('[data-del]').forEach(el => el.addEventListener('click', () => {
+    S.objects = S.objects.filter(o => o.id !== el.dataset.del);
+    drawObjects(); computeAnalysis(); renderTab(); }));
+
+  const fb = $('#findBtn');
+  if (fb) fb.addEventListener('click', () => {
+    const use = S.siteUse, want = S.siteWant;
+    const res = Site.best(S.objects, use, want, 3);
+    if (!res.length){ $('#findOut').innerHTML = `<div class="warn"><b>No candidates</b>There is not enough open ground within 80 ft of the house to place anything.</div>`; return; }
+    const label = Site.USES[use].label;
+    let o = '';
+    if (res[0].fit < 70) o += `<div class="warn"><b>Nothing on this lot really matches</b>
+      The best available spot gets ${h1(res[0].grow)} hours of summer sun, which is outside the range you asked for. These are the closest available.</div>`;
+    res.forEach((c,i) => {
+      const prof = Site.dayProfile(S.lat, S.lon, S.objects, S.years, S.horizon, c.x, c.y, 172);
+      const stars = '★'.repeat(clamp(Math.round(c.score/20),1,5)).padEnd(5,'☆');
+      o += `<div class="slab"><div style="display:flex;justify-content:space-between;align-items:baseline">
+          <b style="font-weight:500">Location ${String.fromCharCode(65+i)}</b>
+          <span style="color:var(--gold);letter-spacing:2px">${stars}</span></div>
+        <div class="rowline" style="padding-top:8px"><span class="k">Summer sun</span><span class="v">${h1(c.grow)} hours</span></div>
+        <div class="rowline"><span class="k">Morning / afternoon / evening</span><span class="v">${h1(Analysis.at(c.x,c.y).morning)} / ${h1(c.bucket)} / ${h1(Analysis.at(c.x,c.y).evening)} h</span></div>
+        <div class="rowline"><span class="k">Distance from the house</span><span class="v">${FT(c.dist).toFixed(0)} ft</span></div>
+        ${prof && prof.last ? `<div class="why" style="margin:10px -15px 0"><b>On June 21</b>Sun reaches this spot at ${fmtT(prof.first)} and leaves at ${fmtT(prof.last)}${prof.closedBy?`, when the ${esc(prof.closedBy.name.toLowerCase())} shades it`:', at sunset'}.</div>`:''}
+        <button class="btn ghost" data-place="${c.x.toFixed(2)},${c.y.toFixed(2)}" style="margin-top:12px">Place the ${esc(label.toLowerCase())} here</button>
+      </div>`;
+    });
+    $('#findOut').innerHTML = o;
+    document.querySelectorAll('[data-place]').forEach(el => el.addEventListener('click', () => {
+      const [x,y] = el.dataset.place.split(',').map(Number);
+      const [la,ln] = Geo.ll(x,y), f = FEATURES[use] || FEATURES.patio;
+      S.objects.push({id:'f'+(Date.now()%1e6), type:'feature', kind:use, name:Site.USES[use].label,
+        lat:la, lng:ln, w:f.w, d:f.d, rot:0, h:0});
+      drawObjects(); computeAnalysis(); renderTab();
+      map.panTo([la,ln]);
+    }));
+  });
+}
+
+/* ── INDOOR ── */
+const FACELBL = ['front (rot 0°)','right','back','left'];
+function roomBounds(r, h){
+  const hw = h.w/2, hd = h.d/2, a = r.pos - r.width/2, b = r.pos + r.width/2;
+  if (r.face === 0) return {u0:a, u1:b, v0:hd-r.depth, v1:hd};
+  if (r.face === 1) return {u0:hw-r.depth, u1:hw, v0:a, v1:b};
+  if (r.face === 2) return {u0:a, u1:b, v0:-hd, v1:-hd+r.depth};
+  return {u0:-hw, u1:-hw+r.depth, v0:a, v1:b};
+}
+const wallAxis = f => (f === 0 || f === 2) ? 'u' : 'v';
+function faceDir(h, face){ return Solar.compass(mod(h.rot + face*90, 360)); }
+
+function tabIndoor(){
+  const h = S.objects.find(o => o.type === 'building' && o.h > 0);
+  if (!h) return `<div class="empty"><h3 class="serif">Add the house first</h3>
+    <p>Indoor light is computed from the same footprint, orientation and shading as the outside. Place a building in the Yard tab.</p></div>`;
+
+  const sc = 300/Math.max(h.w, h.d), W = h.w*sc, H = h.d*sc;
+  const PX = (u,v) => [W/2 + u*sc, H/2 - v*sc];
+  let plan = `<rect x="0" y="0" width="${W}" height="${H}" fill="#FAF8F4" stroke="#1F3D2E" stroke-width="2"/>`;
+  for (const r of S.rooms){
+    const b = roomBounds(r, h), p0 = PX(b.u0, b.v1), p1 = PX(b.u1, b.v0);
+    const on = r.id === S.selRoom;
+    plan += `<rect x="${p0[0]}" y="${p0[1]}" width="${p1[0]-p0[0]}" height="${p1[1]-p0[1]}"
+      fill="${on?'#F6E7C8':'#EFE9DE'}" stroke="${on?'#B8842A':'#9AA09A'}" stroke-width="${on?2:1}" data-room="${r.id}" style="cursor:pointer"/>
+      <text x="${(p0[0]+p1[0])/2}" y="${(p0[1]+p1[1])/2}" text-anchor="middle" font-size="11"
+        font-family="Inter Tight" fill="#4A5C68" pointer-events="none">${esc(r.name)}</text>`;
+    for (const w of (r.windows||[])){
+      const ax = wallAxis(r.face), f = Indoor.faceGeom(h, r.face);
+      const q0 = ax === 'u' ? PX(w.pos-w.width/2, f.at) : PX(f.at, w.pos-w.width/2);
+      const q1 = ax === 'u' ? PX(w.pos+w.width/2, f.at) : PX(f.at, w.pos+w.width/2);
+      plan += `<line x1="${q0[0]}" y1="${q0[1]}" x2="${q1[0]}" y2="${q1[1]}" stroke="#E3A63C" stroke-width="5" stroke-linecap="round"/>`;
+    }
+  }
+  const nb = (h.rot)*D2R;
+  plan += `<g transform="translate(${W-22},22)"><path d="M0,-13 L4,4 L0,1 L-4,4 Z" transform="rotate(${-h.rot})" fill="#1F3D2E"/>
+    <text y="18" text-anchor="middle" font-size="9" font-family="IBM Plex Mono" fill="#6E7570">N</text></g>`;
+
+  let out = `<div class="eyebrow mono">Floor plan</div>
+    <p class="conf" style="margin-top:0">Drawn square to the house. On the site it sits at ${h.rot|0}° — the compass shows true north.</p>
+    <svg viewBox="0 0 ${W} ${H}" id="planSvg" style="width:100%;height:auto;max-height:44vh;margin:8px 0">${plan}</svg>
+    <button class="btn ghost" id="addRoom">+ Add a room</button>`;
+
+  const room = S.rooms.find(r => r.id === S.selRoom);
+  if (!room){
+    out += `<p class="conf">Add a room against an exterior wall, then give it windows. Tap a room on the plan to work on it.</p>`;
+    return out;
+  }
+  const maxSpan = wallAxis(room.face) === 'u' ? h.w : h.d;
+  const maxDepth = wallAxis(room.face) === 'u' ? h.d : h.w;
+  out += `<div class="slab" style="margin-top:16px">
+    <div class="minirow"><div><label>Room name</label><input type="text" data-r="name" value="${esc(room.name)}"></div></div>
+    <div class="minirow">
+      <div><label>Exterior wall</label><select data-r="face">${[0,1,2,3].map(f=>
+        `<option value="${f}"${room.face===f?' selected':''}>${faceDir(h,f)}</option>`).join('')}</select></div>
+      <div><label>Width ft</label><input type="number" data-r="width" value="${FT(room.width).toFixed(0)}"></div>
+      <div><label>Depth ft</label><input type="number" data-r="depth" value="${FT(room.depth).toFixed(0)}"></div>
+    </div>
+    <div class="ctlrow" style="margin:12px 0 0"><label><span class="k" style="color:var(--muted)">Position along that wall</span></label>
+      <input type="range" data-r="pos" min="${(-maxSpan/2+room.width/2).toFixed(2)}" max="${(maxSpan/2-room.width/2).toFixed(2)}" step="0.1" value="${room.pos}"></div>
+    <button class="btn ghost" data-delroom="${room.id}" style="margin-top:10px;padding:9px;font-size:.85rem">Delete this room</button>
+  </div>`;
+
+  out += `<div style="margin-top:20px" class="eyebrow mono">Windows on the ${faceDir(h, room.face).toLowerCase()} wall</div>`;
+  (room.windows||[]).forEach((w,i) => {
+    out += `<div class="obj"><div class="ic">▯</div><div class="bd"><b>Window ${i+1}</b>
+      <div class="minirow">
+        <div><label>Width ft</label><input type="number" data-w="${i}|width" value="${FT(w.width).toFixed(1)}"></div>
+        <div><label>Sill ft</label><input type="number" data-w="${i}|sill" value="${FT(w.sill).toFixed(1)}"></div>
+        <div><label>Head ft</label><input type="number" data-w="${i}|head" value="${FT(w.head).toFixed(1)}"></div>
+      </div></div><button class="x" data-delwin="${i}">✕</button></div>`;
+  });
+  out += `<button class="btn ghost" id="addWin">+ Add a window</button>`;
+
+  if (!(room.windows||[]).length){
+    out += `<p class="conf">A room with no windows has no daylight to model.</p>`;
+    return out;
+  }
+
+  const res = S.indoorRes;
+  if (!res) return out + `<button class="btn" id="calcIndoor">Calculate the light in this room</button>`;
+
+  const b = roomBounds(room, h);
+  const S2 = 300/Math.max(b.u1-b.u0, b.v1-b.v0), RW = (b.u1-b.u0)*S2, RH = (b.v1-b.v0)*S2;
+  const rp = (u,v) => [(u-b.u0)*S2, RH - (v-b.v0)*S2];
+  let map = '';
+  for (let j=0;j<res.nv;j++) for (let i=0;i<res.nu;i++){
+    const k = j*res.nu+i, u = b.u0+i*Indoor.CELL, v = b.v0+j*Indoor.CELL;
+    const bd = Indoor.band(res.df[k], res.sun.summer[k], res.sun.winter[k]);
+    const p = rp(u, v+Indoor.CELL);
+    map += `<rect x="${p[0].toFixed(1)}" y="${p[1].toFixed(1)}" width="${(Indoor.CELL*S2).toFixed(1)}" height="${(Indoor.CELL*S2).toFixed(1)}" fill="${Indoor.BANDCOL[bd]}"/>`;
+  }
+  const pos = Solar.position(S.lat, S.lon, S.date);
+  for (const w of room.windows){
+    const q = Indoor.patch(w, h, pos.alt, pos.az);
+    if (q) map += `<polygon points="${q.map(p=>rp(p[0],p[1]).map(n=>n.toFixed(1)).join(',')).join(' ')}"
+      fill="#FFD98A" fill-opacity=".75" stroke="#E3A63C" stroke-width="1"/>`;
+  }
+  map += `<rect x="0" y="0" width="${RW}" height="${RH}" fill="none" stroke="#1F3D2E" stroke-width="2"/>`;
+  for (const w of room.windows){
+    const ax = wallAxis(room.face), f = Indoor.faceGeom(h, room.face);
+    const q0 = ax === 'u' ? rp(w.pos-w.width/2, f.at) : rp(f.at, w.pos-w.width/2);
+    const q1 = ax === 'u' ? rp(w.pos+w.width/2, f.at) : rp(f.at, w.pos+w.width/2);
+    map += `<line x1="${q0[0]}" y1="${q0[1]}" x2="${q1[0]}" y2="${q1[1]}" stroke="#E3A63C" stroke-width="6" stroke-linecap="round"/>`;
+  }
+  if (S.indoorSpot){ const p = rp(S.indoorSpot[0], S.indoorSpot[1]);
+    map += `<circle cx="${p[0]}" cy="${p[1]}" r="7" fill="none" stroke="#1F3D2E" stroke-width="2.5"/>`; }
+
+  const mins = S.date.getHours()*60 + S.date.getMinutes();
+  out += `<div style="margin-top:22px" class="eyebrow mono">Light in ${esc(room.name)}</div>
+    <p class="conf" style="margin-top:0">Sky availability through these windows: ${res.avail.map(a=>(a*100).toFixed(0)+'%').join(', ')} after trees and neighbours.</p>
+    <svg viewBox="0 0 ${RW} ${RH}" id="lightSvg" style="width:100%;height:auto;margin:8px 0;cursor:crosshair">${map}</svg>
+    <div class="legend" style="margin-bottom:10px">${['high','vbright','bright','medium','low','dark'].map(k=>
+      `<span><i style="background:${Indoor.BANDCOL[k]};height:9px;width:9px;border-radius:2px"></i>${Indoor.BANDLBL[k]}</span>`).join('')}</div>
+    <div class="ctlrow"><label><span class="mono">Sun patch at</span><b id="iLab">${fmtD(S.date)}, ${fmtT(S.date)}</b></label>
+      <input type="range" id="iTime" min="0" max="1439" step="10" value="${mins}" aria-label="Time of day">
+      <div class="presets">${[['79','Equinox'],['172','Jun 21'],['355','Dec 21']].map(([d,l])=>
+        `<button class="pill" data-iday="${d}">${l}</button>`).join('')}</div></div>`;
+
+  if (!S.indoorSpot) out += `<p class="conf">Tap anywhere on the room to read that exact spot and find plants for it.</p>`;
+  else {
+    const p = Indoor.at(res, S.indoorSpot[0], S.indoorSpot[1]);
+    const direct = Math.max(p.summer, p.winter*0.7);
+    const bd = Indoor.band(p.df, p.summer, p.winter);
+    out += `<div class="slab">
+      <div style="display:flex;align-items:flex-end;gap:14px">
+        <div class="big-num">${p.df.toFixed(1)}<span style="font-size:1rem;font-family:'Inter Tight'">%</span></div>
+        <div style="padding-bottom:6px"><b style="color:var(--gold)">${Indoor.BANDLBL[bd]}</b>
+          <div class="mono" style="color:var(--muted-l)">Daylight factor</div></div></div>
+      <div class="rowline" style="margin-top:10px"><span class="k">Direct sun, June 21</span><span class="v">${h1(p.summer)} h</span></div>
+      <div class="rowline"><span class="k">Direct sun, December 21</span><span class="v">${h1(p.winter)} h</span></div>
+      <div class="rowline"><span class="k">Direct sun, equinox</span><span class="v">${h1(p.equinox)} h</span></div>
+    </div>
+    <div class="presets"><button class="pill" data-ipet aria-pressed="${S.petSafe}">Pet-safe only</button></div>`;
+    const recs = IndoorDB.forSpot(p.df, direct, S.petSafe, 6);
+    if (!recs.length) out += `<div class="warn"><b>Too dark for anything in the list</b>Nothing here will hold up long term at this light level without a grow lamp.</div>`;
+    for (const {p:pl, s} of recs){
+      out += `<div class="pcard"><div class="hd"><div class="nm"><h3>${esc(pl.n)}</h3><div class="sci">${esc(pl.s)}</div></div>
+        <div class="score"><b>${s}%</b><span>Match</span></div></div>
+        <div class="facts"><span><i>◐</i>Wants ${pl.ideal[0]}–${pl.ideal[1]}% DF</span><span><i>☀</i>Takes ${pl.direct[1]} h direct</span>
+          <span><i>💧</i>${esc(pl.water)} water</span><span><i>↕</i>${esc(pl.size)}</span></div>
+        <div class="why"><b>Why here</b>${esc(IndoorDB.why(p.df, direct, pl))} ${esc(pl.note)}
+        ${!pl.pet?`<div style="margin-top:7px;color:#9C3B2E">⚠ Not safe for cats or dogs that chew.</div>`:''}</div></div>`;
+    }
+  }
+  out += `<p class="conf"><b>What this is.</b> The sun patch is exact geometry — the window aperture projected onto the floor along the sun vector, using the same shading model as the yard. The daylight factor is the sky component only, under a CIE overcast sky. It leaves out light reflected off the ground and off your own walls and ceiling, so a real room measures brighter than these numbers, typically by a third to a half. Blinds, curtains, roof overhangs and interior doors are not modelled.</p>`;
+  return out;
+}
+
+function calcIndoor(){
+  const h = S.objects.find(o => o.type === 'building' && o.h > 0);
+  const room = S.rooms.find(r => r.id === S.selRoom);
+  if (!h || !room || !(room.windows||[]).length){ S.indoorRes = null; return; }
+  S.indoorRes = Indoor.analyze(roomBounds(room, h), room.windows, h, S.lat, S.lon, S.objects, S.years, S.horizon);
+}
+
+function wireIndoor(){
+  const h = S.objects.find(o => o.type === 'building' && o.h > 0);
+  const room = S.rooms.find(r => r.id === S.selRoom);
+  document.querySelectorAll('[data-room]').forEach(el => el.addEventListener('click', () => {
+    S.selRoom = el.dataset.room; S.indoorSpot = null; calcIndoor(); renderTab();
+  }));
+  const ar = $('#addRoom');
+  if (ar) ar.addEventListener('click', () => {
+    const id = 'r'+(Date.now()%1e6);
+    S.rooms.push({id, name:'Room '+(S.rooms.length+1), face:2, pos:0,
+      width:Math.min(4.5, h.w*0.6), depth:Math.min(4, h.d*0.5), windows:[]});
+    S.selRoom = id; S.indoorSpot = null; S.indoorRes = null; renderTab();
+  });
+  document.querySelectorAll('[data-delroom]').forEach(el => el.addEventListener('click', () => {
+    S.rooms = S.rooms.filter(r => r.id !== el.dataset.delroom);
+    S.selRoom = null; S.indoorRes = null; renderTab();
+  }));
+  document.querySelectorAll('[data-r]').forEach(el => {
+    const ev = el.type === 'range' ? 'input' : 'change';
+    el.addEventListener(ev, () => {
+      const k = el.dataset.r;
+      if (k === 'name') room.name = el.value;
+      else if (k === 'face'){ room.face = +el.value; room.pos = 0; room.windows = []; }
+      else if (k === 'pos') room.pos = +el.value;
+      else room[k] = M(+el.value);
+      const b = roomBounds(room, h);
+      room.windows = (room.windows||[]).filter(w => {
+        const lo = wallAxis(room.face)==='u' ? b.u0 : b.v0, hi = wallAxis(room.face)==='u' ? b.u1 : b.v1;
+        return w.pos - w.width/2 >= lo - 0.01 && w.pos + w.width/2 <= hi + 0.01;
+      });
+      S.indoorSpot = null; calcIndoor(); renderTab();
+    });
+  });
+  const aw = $('#addWin');
+  if (aw) aw.addEventListener('click', () => {
+    const b = roomBounds(room, h), ax = wallAxis(room.face);
+    const lo = ax==='u'?b.u0:b.v0, hi = ax==='u'?b.u1:b.v1;
+    const n = (room.windows||[]).length;
+    room.windows = room.windows || [];
+    room.windows.push({face:room.face, pos: lo + (hi-lo)*(n%3+1)/4, width:Math.min(1.8,(hi-lo)/3), sill:0.9, head:2.1});
+    calcIndoor(); renderTab();
+  });
+  document.querySelectorAll('[data-w]').forEach(el => el.addEventListener('change', () => {
+    const [i,k] = el.dataset.w.split('|');
+    room.windows[+i][k] = M(+el.value);
+    calcIndoor(); renderTab();
+  }));
+  document.querySelectorAll('[data-delwin]').forEach(el => el.addEventListener('click', () => {
+    room.windows.splice(+el.dataset.delwin, 1); calcIndoor(); renderTab();
+  }));
+  const ci = $('#calcIndoor');
+  if (ci) ci.addEventListener('click', () => { ci.textContent = 'Working…'; setTimeout(() => { calcIndoor(); renderTab(); }, 30); });
+  document.querySelectorAll('[data-ipet]').forEach(el => el.addEventListener('click', () => { S.petSafe = !S.petSafe; renderTab(); }));
+  const it = $('#iTime');
+  if (it) it.addEventListener('input', () => {
+    S.date.setHours(Math.floor(+it.value/60), +it.value%60, 0, 0);
+    $('#iLab').textContent = `${fmtD(S.date)}, ${fmtT(S.date)}`;
+    redrawPatch(); drawShadows();
+  });
+  document.querySelectorAll('[data-iday]').forEach(el => el.addEventListener('click', () => {
+    const d = new Date(S.date.getFullYear(), 0, +el.dataset.iday);
+    S.date = new Date(d.getFullYear(), d.getMonth(), d.getDate(), S.date.getHours(), S.date.getMinutes());
+    renderTab(); drawShadows();
+  }));
+  const ls = $('#lightSvg');
+  if (ls) ls.addEventListener('click', e => {
+    const b = roomBounds(room, h), r = ls.getBoundingClientRect();
+    const S2 = 300/Math.max(b.u1-b.u0, b.v1-b.v0), RH = (b.v1-b.v0)*S2, RW = (b.u1-b.u0)*S2;
+    const x = (e.clientX - r.left)/r.width*RW, y = (e.clientY - r.top)/r.height*RH;
+    S.indoorSpot = [b.u0 + x/S2, b.v0 + (RH - y)/S2];
+    renderTab();
+  });
+}
+function redrawPatch(){
+  const h = S.objects.find(o => o.type === 'building' && o.h > 0);
+  const room = S.rooms.find(r => r.id === S.selRoom);
+  const svg = $('#lightSvg');
+  if (!h || !room || !svg) return;
+  const b = roomBounds(room, h);
+  const S2 = 300/Math.max(b.u1-b.u0, b.v1-b.v0), RH = (b.v1-b.v0)*S2;
+  const rp = (u,v) => [(u-b.u0)*S2, RH - (v-b.v0)*S2];
+  const pos = Solar.position(S.lat, S.lon, S.date);
+  svg.querySelectorAll('polygon').forEach(n => n.remove());
+  for (const w of room.windows){
+    const q = Indoor.patch(w, h, pos.alt, pos.az);
+    if (!q) continue;
+    const el = document.createElementNS('http://www.w3.org/2000/svg','polygon');
+    el.setAttribute('points', q.map(p => rp(p[0],p[1]).map(n=>n.toFixed(1)).join(',')).join(' '));
+    el.setAttribute('fill','#FFD98A'); el.setAttribute('fill-opacity','.75');
+    el.setAttribute('stroke','#E3A63C'); el.setAttribute('stroke-width','1');
+    svg.insertBefore(el, svg.querySelector('rect[fill="none"]'));
+  }
+}
+
+/* ── PLANT SEARCH & DETAIL ── */
+const SCALE = ['None','Low','Moderate','High'];
+const MOISTLBL = {dry:'Dry', avg:'Average', moist:'Moist'};
+/* Every field the app can hold, in display order. A record that lacks one is
+   reported as "not recorded" rather than quietly omitted — with two sources of
+   differing depth, knowing what is missing matters as much as what is there. */
+const FIELDS = [
+  ['s',     'Scientific name',   v => v],
+  ['t',     'Type',              v => TYPE_LABEL[v] || v],
+  ['z',     'Hardiness zones',   v => `${v[0]}–${v[1]}`],
+  ['sun',   'Direct sun needed', v => v[1] >= 12 ? `${v[0]}+ hours` : `${v[0]}–${v[1]} hours`],
+  ['moist', 'Soil moisture',     v => v.map(m => MOISTLBL[m] || m).join(', ')],
+  ['ph',    'Soil pH',           v => v],
+  ['ht',    'Mature height',     v => v],
+  ['wd',    'Mature width',      v => v],
+  ['sp',    'Planting spacing',  v => v + ' ft apart'],
+  ['bloom', 'Bloom season',      v => v],
+  ['ev',    'Foliage',           v => v ? 'Evergreen' : 'Deciduous'],
+  ['nat',   'Native',            v => v ? 'Native to the eastern US' : 'Introduced'],
+  ['dr',    'Drought tolerance', v => SCALE[v]],
+  ['deer',  'Deer resistance',   v => SCALE[v]],
+  ['poll',  'Pollinator value',  v => SCALE[v]],
+  ['maint', 'Maintenance',       v => v],
+  ['pests', 'Common pests',      v => v],
+  ['dis',   'Common diseases',   v => v],
+  ['tox',   'Toxicity',          v => v || 'No toxicity noted']
+];
+/* free-text tokens that map onto structured fields */
+const TAGS = {
+  native:p=>p.nat===1, evergreen:p=>p.ev===1, deciduous:p=>p.ev===0,
+  deer:p=>p.deer>=2, 'deer resistant':p=>p.deer>=2, pollinator:p=>p.poll>=2,
+  drought:p=>p.dr>=2, 'drought tolerant':p=>p.dr>=2,
+  'pet safe':p=>p.tox==='', 'pet-safe':p=>p.tox==='',
+  shade:p=>p.sun&&p.sun[0]<=2, 'full shade':p=>p.sun&&p.sun[1]<=2,
+  'part shade':p=>p.sun&&p.sun[0]<=4, 'full sun':p=>p.sun&&p.sun[0]>=6, sun:p=>p.sun&&p.sun[0]>=6,
+  'low maintenance':p=>p.maint==='Very low'||p.maint==='Low', fragrant:p=>/fragran|scent/i.test(p.note||'')
+};
+function plantMatches(p, q){
+  const toks = q.toLowerCase().split(/\s*,\s*|\s+and\s+/).map(t=>t.trim()).filter(Boolean);
+  return toks.every(t => {
+    if (TAGS[t]) return TAGS[t](p);
+    const zm = t.match(/^zone\s*(\d+)/);
+    if (zm) return p.z && +zm[1] >= p.z[0] && +zm[1] <= p.z[1];
+    if (TYPE_LABEL[t] || Object.keys(TYPE_LABEL).some(k => TYPE_LABEL[k].toLowerCase() === t))
+      return p.t === t || TYPE_LABEL[p.t].toLowerCase() === t;
+    const hay = `${p.n} ${p.s||''} ${p.note||''} ${TYPE_LABEL[p.t]||''} ${p.bloom||''}`.toLowerCase();
+    return hay.includes(t);
+  });
+}
+function searchPlants(q, limit){
+  if (!q.trim()) return [];
+  const hits = PlantData.all().filter(p => plantMatches(p, q));
+  const ql = q.toLowerCase().trim();
+  hits.sort((a,b) => {
+    const rank = p => (p.n.toLowerCase() === ql ? 0 : p.n.toLowerCase().startsWith(ql) ? 1
+      : p.n.toLowerCase().includes(ql) ? 2 : 3) + (p.src === 'curated' ? 0 : 0.5);
+    return rank(a) - rank(b) || a.n.localeCompare(b.n);
+  });
+  return hits.slice(0, limit || 60);
+}
+
+function renderSearch(){
+  const box = $('#searchOut'); if (!box) return;
+  const q = S.query || '';
+  if (!q.trim()){ box.innerHTML = ''; return; }
+  const hits = searchPlants(q, 60);
+  const total = PlantData.all().filter(p => plantMatches(p, q)).length;
+  if (!hits.length){
+    box.innerHTML = `<p class="conf">Nothing matched “${esc(q)}”. Try a common name, a genus, a type like “shrub”, or a trait like “native”, “evergreen”, “shade”, “pollinator”, “zone 7”.</p>`;
+    return;
+  }
+  box.innerHTML = `<div class="eyebrow mono" style="margin:14px 0 8px">${total} match${total===1?'':'es'}${total>hits.length?` · showing ${hits.length}`:''}</div>`
+    + hits.map(p => {
+      const sc = S.spotData ? Recommend.score(S.spotData, S.zone, S.soil, {}, p) : null;
+      return `<div class="obj" data-open="${esc(p.n)}|${esc(p.s||'')}" style="cursor:pointer">
+        <div class="bd"><b>${esc(p.n)}</b>
+          <div class="sub" style="font-style:italic">${esc(p.s||'')}</div>
+          <div class="sub">${esc(TYPE_LABEL[p.t]||p.t)} · zones ${p.z?p.z[0]+'–'+p.z[1]:'—'}${p.ht?' · '+esc(p.ht):''}</div></div>
+        ${sc !== null ? `<div class="score" style="align-self:center"><b style="font-size:1.1rem">${sc}%</b><span>Here</span></div>` : ''}
+      </div>`;
+    }).join('');
+  box.querySelectorAll('[data-open]').forEach(el => el.addEventListener('click', () => {
+    const [n,s] = el.dataset.open.split('|');
+    S.selPlant = PlantData.all().find(p => p.n === n && (p.s||'') === s) || null;
+    renderTab();
+    $('#body').scrollTop = 0;
+  }));
+}
+
+/* Selecting a planting side from anywhere, so the detail view and the Yard
+   tab agree on what "the spot" means. */
+function selectZone(name){
+  const z = Analysis.zones(S.objects).find(x => x.name === name);
+  if (!z) return false;
+  S.spotData = z; S.spot = L.latLng(z.anchor[0], z.anchor[1]);
+  if (map){
+    if (spotM) map.removeLayer(spotM);
+    spotM = L.circleMarker(S.spot, {radius:8, color:'#B8842A', weight:2.5,
+      fillColor:'#E3A63C', fillOpacity:.55}).addTo(map);
+    map.panTo(S.spot);
+  }
+  return true;
+}
+/* One path for adding a plant, used by the recommendation cards and by the
+   search detail view. Works for imported records, which the old handler could
+   not find because it only searched the curated list. */
+function addToPlan(p){
+  if (!p || !S.spot || !S.spotData) return false;
+  const zone = S.spotData.name || 'Selected spot';
+  const ex = S.plan.find(x => x.p.n === p.n && x.zone === zone);
+  if (ex) ex.qty++;
+  else S.plan.push({p, qty:1, zone, lat:S.spot.lat, lng:S.spot.lng, hrs:S.spotData.grow});
+  if (p.t === 'tree'){
+    S.objects.push({id:'p'+(Date.now()%1e6), type:'tree', name:p.n+' (planned)',
+      lat:S.spot.lat, lng:S.spot.lng, r:M(1.5), h:M(6), deciduous: p.ev ? 0 : 1,
+      growth:0.4, matureH:M(parseFt(p.ht||'25 ft')), matureR:M(parseFt(p.wd||'15 ft'))/2, planned:true});
+    drawObjects(); computeAnalysis();
+  }
+  drawPlan();
+  return true;
+}
+
+function plantDetail(p){
+  const known = [], missing = [];
+  for (const [k, label, fmt] of FIELDS){
+    if (p[k] === undefined || p[k] === null || p[k] === '')
+      { if (!(k === 'tox' && p.tox === '')) { missing.push(label); continue; } }
+    known.push([label, fmt(p[k])]);
+  }
+  const sc = S.spotData ? Recommend.score(S.spotData, S.zone, S.soil, {}, p) : null;
+  let h = `<button class="btn ghost" id="backSearch" style="margin:0 0 16px">← Back to results</button>
+    <h2 class="serif" style="font-size:1.9rem;font-weight:400;letter-spacing:-.015em;line-height:1.1">${esc(p.n)}</h2>
+    <div style="font-style:italic;color:var(--muted-l);margin:4px 0 14px">${esc(p.s||'')}</div>`;
+  if (p.note) h += `<p style="color:var(--muted);line-height:1.6;margin:0 0 16px">${esc(p.note)}</p>`;
+  if (sc !== null){
+    h += `<div class="slab" style="border-left:3px solid var(--gold)">
+      <div style="display:flex;align-items:flex-end;gap:12px"><div class="big-num">${sc}<span style="font-size:1rem;font-family:'Inter Tight'">%</span></div>
+      <div style="padding-bottom:6px"><b style="color:var(--gold)">Match for ${esc(S.spotData.name||'the selected spot')}</b></div></div>
+      <p style="margin:10px 0 0;font-size:.9rem;line-height:1.55;color:#3B423C">${esc(Recommend.why(S.spotData, S.zone, S.soil, p))}</p></div>`;
+  }
+  h += `<div class="slab">` + known.map(([l,v]) =>
+    `<div class="rowline"><span class="k">${esc(l)}</span><span class="v">${esc(String(v))}</span></div>`).join('') + `</div>`;
+  if (missing.length)
+    h += `<div class="slab" style="background:var(--sand)"><div class="mono" style="color:var(--muted-l);margin-bottom:7px">Not recorded for this plant</div>
+      <div style="font-size:.88rem;color:var(--muted);line-height:1.6">${missing.map(esc).join(' · ')}</div></div>`;
+  // edibles get the thing that actually matters: when to sow and harvest HERE
+  const cal = PlantData.calendarFor(p, S.zone), zi = PlantData.zoneInfo(S.zone);
+  if (cal){
+    const MON = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+    const BANDS = [['Start indoors',0,1,'#C8B8D8'],['Transplant out',2,3,'#9FC4A8'],
+                   ['Direct sow',4,5,'#D8C89A'],['Harvest',6,7,'#E3A63C']];
+    h += `<div style="margin-top:20px" class="eyebrow mono">Planting calendar for zone ${esc(S.zoneLabel)}</div>`;
+    if (zi) h += `<p class="conf" style="border:none;padding-top:0;margin-top:0">Last frost around ${esc(zi.lastFrost)}, first frost around ${esc(zi.firstFrost)} — about ${zi.season} growing days.</p>`;
+    h += `<div class="slab" style="padding:14px 12px">
+      <div style="display:flex;gap:2px;margin-bottom:3px" class="mono">${MON.map(m=>`<div style="flex:1;text-align:center;color:var(--muted-l);font-size:.62rem">${m}</div>`).join('')}</div>`;
+    for (const [label, a, b, col] of BANDS){
+      const s0 = cal[a], s1 = cal[b] || cal[a];
+      if (!s0) continue;
+      h += `<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px">
+        <div style="display:flex;gap:2px;flex:1">${MON.map((_,i)=>{
+          const on = (i+1) >= s0 && (i+1) <= s1;
+          return `<div style="flex:1;height:15px;border-radius:2px;background:${on?col:'var(--sand)'}"></div>`;}).join('')}</div></div>
+        <div class="mono" style="color:var(--muted);margin:-3px 0 8px">${esc(label)}</div>`;
+    }
+    h += `</div>`;
+    if (p.dth) h += `<div class="rowline"><span class="k">Days to harvest</span><span class="v">${esc(p.dth)}</span></div>`;
+    if (p.sow) h += `<div class="rowline"><span class="k">Sowing method</span><span class="v">${esc(p.sow.replace(/_/g,' '))}</span></div>`;
+    if (p.container) h += `<div class="rowline"><span class="k">Container friendly</span><span class="v">Yes</span></div>`;
+  }
+  const comp = PlantData.companionsFor(p);
+  if (comp.length){
+    h += `<div style="margin-top:20px" class="eyebrow mono">Companion planting</div><div class="slab" style="padding:12px 15px">`;
+    for (const [name, rel, reason] of comp)
+      h += `<div style="padding:9px 0;border-bottom:1px solid var(--line-soft)">
+        <b style="font-weight:500">${rel === 'b' ? '✓' : '✕'} ${esc(name)}</b>
+        <div style="font-size:.86rem;color:var(--muted);line-height:1.5;margin-top:2px">${esc(reason)}</div></div>`;
+    h += `</div>`;
+  }
+  // pick which side of the house this is going, then add it
+  const zones = Analysis.ready ? Analysis.zones(S.objects) : [];
+  if (zones.length || S.spotData){
+    h += `<div style="margin-top:24px" class="eyebrow mono">Add to your plan</div>
+      <p class="conf" style="border:none;padding-top:0;margin-top:0">Choose where it is going. The match score above updates to that spot's measured sun.</p>
+      <div class="presets">${zones.map(z => `<button class="pill" data-pickzone="${esc(z.name)}"
+        aria-pressed="${S.spotData && S.spotData.name === z.name}">${esc(z.name)} · ${h1(z.grow)} h</button>`).join('')}
+        ${S.spotData && !S.spotData.name ? `<button class="pill" aria-pressed="true">Spot picked on the map · ${h1(S.spotData.grow)} h</button>` : ''}</div>`;
+    if (S.spotData && S.spot){
+      const inPlan = S.plan.filter(x => x.p.n === p.n && x.zone === (S.spotData.name || 'Selected spot'))
+                           .reduce((a,x) => a + x.qty, 0);
+      h += `<button class="btn" id="addPlan">Add ${esc(p.n)} to ${esc(S.spotData.name || 'the selected spot')}</button>
+        ${inPlan ? `<p class="conf" style="border:none;padding-top:0">${inPlan} already in your plan for this spot.</p>` : ''}`;
+    } else {
+      h += `<p class="conf">Pick a side above, or tap a spot on the map, and an add button will appear here.</p>`;
+    }
+  }
+  h += `<div class="conf" style="border:none;padding-top:0">${p.src === 'curated'
+      ? 'Hand-checked record written for this application. Sun ranges, native status, deer resistance and toxicity were reviewed individually.'
+      : `Imported record. ${p.url ? `Source: <a href="${esc(p.url)}" target="_blank" rel="noopener" style="color:var(--gold)">${esc(p.srcLabel||'dataset')}</a>.` : 'No source URL published for this row.'}
+         Fields the source does not publish — native status, deer resistance, pollinator value and toxicity — are left blank rather than guessed, so this plant is excluded from those filters.`}</div>`;
+  return h;
+}
+
+/* ─────────────── STORAGE ───────────────
+   Tiered on purpose: the artifact sandbox, a normal web host, and a file
+   opened straight from disk all behave differently. Project export is the
+   backstop that works everywhere. */
+const Store = (() => {
+  let mem = {};
+  const hasLS = (() => { try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); return true; } catch(e){ return false; } })();
+  const backend = hasLS ? 'localStorage' : 'memory';
+  return {
+    backend,
+    get(k){
+      try { return hasLS ? JSON.parse(localStorage.getItem('ecl:'+k) || 'null') : (mem[k] ?? null); }
+      catch(e){ return null; }
+    },
+    set(k, v){
+      try { hasLS ? localStorage.setItem('ecl:'+k, JSON.stringify(v)) : (mem[k] = v); return true; }
+      catch(e){ mem[k] = v; return false; }
+    },
+    remove(k){ try { hasLS ? localStorage.removeItem('ecl:'+k) : delete mem[k]; } catch(e){ delete mem[k]; } }
+  };
+})();
+
+/* ─────────────── PROJECTS ───────────────
+   A project is one job: the property, everything placed on it, the interior,
+   the planting schedule and the notes. Self-contained, so an exported file
+   still opens years later even if the plant library has moved on. */
+const Projects = (() => {
+  const KEY = 'projects';
+  let current = null;
+  const nid = () => 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+  function list(){ return (Store.get(KEY) || []).sort((a,b) => (b.updated||0) - (a.updated||0)); }
+  function save(meta){
+    const all = Store.get(KEY) || [];
+    const snap = capture(meta);
+    const i = all.findIndex(p => p.id === snap.id);
+    i >= 0 ? all[i] = snap : all.push(snap);
+    Store.set(KEY, all);
+    current = snap.id;
+    return snap;
+  }
+  function capture(meta){
+    return Object.assign({
+      id: current || nid(),
+      name: (meta && meta.name) || Property.label() || 'Untitled project',
+      client: (meta && meta.client) || '',
+      notes: (meta && meta.notes) || '',
+      updated: Date.now(),
+      version: 1
+    }, {
+      property: {address:Property.address, addressPoint:Property.addressPoint, lat:Property.lat,
+                 lon:Property.lon, granularity:Property.granularity, confidence:Property.confidence,
+                 source:Property.source, verified:Property.verified},
+      site: {zone:S.zone, zoneLabel:S.zoneLabel, soil:S.soil, horizon:S.horizon, years:S.years,
+             objects:S.objects, rooms:S.rooms, prefs:S.prefs,
+             spot: S.spot ? [S.spot.lat, S.spot.lng] : null,
+             spotName: S.spotData ? (S.spotData.name || null) : null},
+      plan: S.plan.map(it => ({p:it.p, qty:it.qty, zone:it.zone, lat:it.lat, lng:it.lng,
+                               hrs:it.hrs, price:it.price ?? null}))
+    });
+  }
+  function open(id){
+    const p = list().find(x => x.id === id);
+    if (!p) return false;
+    hydrate(p);
+    current = p.id;
+    return true;
+  }
+  function hydrate(p){
+    Property.address = p.property.address; Property.addressPoint = p.property.addressPoint;
+    Property.lat = p.property.lat; Property.lon = p.property.lon;
+    Property.granularity = p.property.granularity; Property.confidence = p.property.confidence;
+    Property.source = p.property.source; Property.verified = true;
+    applyProperty();
+    S.zone = p.site.zone; S.zoneLabel = p.site.zoneLabel; S.soil = p.site.soil;
+    S.horizon = p.site.horizon ?? 8; S.years = p.site.years || 0;
+    S.objects = p.site.objects || []; S.rooms = p.site.rooms || []; S.prefs = p.site.prefs || S.prefs;
+    S.plan = (p.plan || []).map(it => Object.assign({}, it));
+    S.selPlant = null; S.query = ''; S.indoorRes = null; S.selRoom = null; S.indoorSpot = null;
+    S.spot = null; S.spotData = null;
+    meta = {name:p.name, client:p.client, notes:p.notes};
+  }
+  function remove(id){
+    Store.set(KEY, (Store.get(KEY) || []).filter(p => p.id !== id));
+    if (current === id) current = null;
+  }
+  function duplicate(id){
+    const p = list().find(x => x.id === id); if (!p) return;
+    const copy = JSON.parse(JSON.stringify(p));
+    copy.id = nid(); copy.name = p.name + ' (copy)'; copy.updated = Date.now();
+    const all = Store.get(KEY) || []; all.push(copy); Store.set(KEY, all);
+  }
+  let meta = {name:'', client:'', notes:''};
+  const company = () => Store.get('company') || {name:'', phone:'', email:'', license:'', tagline:''};
+  const setCompany = c => Store.set('company', c);
+  return {list, save, open, remove, duplicate, capture, hydrate,
+    get current(){return current;}, set current(v){current = v;},
+    get meta(){return meta;}, set meta(m){meta = m;},
+    company, setCompany, newId:nid};
+})();
+
+/* ─────────────── REPORT ───────────────
+   The thing a contractor actually hands the client. Printed from the browser,
+   so it needs no server and no PDF library. */
+function buildReport(){
+  const co = Projects.company(), m = Projects.meta;
+  const zones = Analysis.ready ? Analysis.zones(S.objects) : [];
+  const bd = Analysis.ready ? Analysis.breakdown(S.objects) : null;
+  const zi = PlantData.zoneInfo ? PlantData.zoneInfo(S.zone) : null;
+  const today = new Date().toLocaleDateString([], {year:'numeric', month:'long', day:'numeric'});
+  const sol = d => { const e = Solar.events(S.lat, S.lon, d);
+    return e.rise ? `${fmtT(e.rise)} – ${fmtT(e.set)}` : '—'; };
+  const yr = new Date().getFullYear();
+
+  let h = `<header class="rep-head">
+      <div><div class="rep-co">${esc(co.name || 'Landscape Plan')}</div>
+        ${co.tagline?`<div class="rep-tag">${esc(co.tagline)}</div>`:''}</div>
+      <div class="rep-meta">${[co.phone, co.email, co.license && 'Lic. '+co.license].filter(Boolean).map(esc).join('<br>')}</div>
+    </header>
+    <h1 class="rep-title">${esc(m.name || Property.label())}</h1>
+    <div class="rep-sub">${[m.client && 'Prepared for '+m.client, Property.label(), Property.sub(), today].filter(Boolean).map(esc).join(' · ')}</div>`;
+
+  h += `<h2>Property</h2><table class="rep-t">
+    <tr><td>Address</td><td>${esc((Property.address && Property.address.display) || Property.label())}</td></tr>
+    <tr><td>Coordinates</td><td>${S.lat.toFixed(5)}, ${S.lon.toFixed(5)}</td></tr>
+    <tr><td>Hardiness zone</td><td>${esc(S.zoneLabel)} (estimated from latitude)</td></tr>
+    ${zi?`<tr><td>Frost dates</td><td>Last ${esc(zi.lastFrost)}, first ${esc(zi.firstFrost)} — about ${zi.season} growing days</td></tr>`:''}
+    <tr><td>Soil assumed</td><td>${({dry:'Dry / sandy',avg:'Average',moist:'Moist / low-lying'})[S.soil]}</td></tr>
+    <tr><td>Surrounding tree line</td><td>${S.horizon}° horizon</td></tr>
+  </table>`;
+
+  h += `<h2>Solar conditions</h2><table class="rep-t">
+    <tr><td>Summer solstice daylight</td><td>${sol(new Date(yr,5,21))}</td></tr>
+    <tr><td>Equinox daylight</td><td>${sol(new Date(yr,2,20))}</td></tr>
+    <tr><td>Winter solstice daylight</td><td>${sol(new Date(yr,11,21))}</td></tr>
+    <tr><td>Noon sun altitude, summer</td><td>${Solar.position(S.lat,S.lon,Solar.events(S.lat,S.lon,new Date(yr,5,21)).noon).alt.toFixed(1)}°</td></tr>
+    <tr><td>Noon sun altitude, winter</td><td>${Solar.position(S.lat,S.lon,Solar.events(S.lat,S.lon,new Date(yr,11,21)).noon).alt.toFixed(1)}°</td></tr>
+  </table>`;
+
+  if (bd) h += `<h2>Yard exposure</h2><table class="rep-t">
+    ${bd.map((v,i)=>`<tr><td>${SUNLBL[i]}</td><td>${v}% of the usable yard</td></tr>`).join('')}</table>`;
+
+  if (zones.length) h += `<h2>Planting zones</h2><table class="rep-t rep-grid">
+    <tr><th>Zone</th><th>Summer</th><th>Winter</th><th>Classification</th></tr>
+    ${zones.map(z=>`<tr><td>${esc(z.name)}</td><td>${h1(z.summer)} h</td><td>${h1(z.winter)} h</td><td>${esc(z.seasonal)}</td></tr>`).join('')}</table>`;
+
+  if (S.objects.filter(o=>o.h>0).length) h += `<h2>Shade sources modelled</h2><table class="rep-t rep-grid">
+    <tr><th>Object</th><th>Height</th><th>Size</th><th>Source</th></tr>
+    ${S.objects.filter(o=>o.h>0).map(o=>`<tr><td>${esc(o.name)}</td><td>${FT(o.h).toFixed(0)} ft</td>
+      <td>${o.type==='tree'?FT(o.r*2).toFixed(0)+' ft spread':FT(o.w).toFixed(0)+' × '+FT(o.d).toFixed(0)+' ft'}</td>
+      <td>Entered by ${o.planned?'plan':'surveyor'}</td></tr>`).join('')}</table>`;
+
+  if (S.plan.length){
+    const byZone = {}; S.plan.forEach(it => (byZone[it.zone] ||= []).push(it));
+    let count = 0, mulch = 0, cost = 0, priced = false;
+    h += `<h2>Planting schedule</h2>`;
+    for (const z in byZone){
+      h += `<h3>${esc(z)}</h3><table class="rep-t rep-grid">
+        <tr><th>Qty</th><th>Plant</th><th>Botanical name</th><th>Spacing</th><th>Mature size</th><th class="num">Unit</th><th class="num">Amount</th></tr>`;
+      for (const it of byZone[z]){
+        const sp = it.p.sp || Math.max(1, parseFt(it.p.wd || '3 ft'));
+        count += it.qty; mulch += it.qty * Math.PI * Math.pow(sp/2, 2);
+        const line = it.price ? it.price * it.qty : 0;
+        if (it.price) { priced = true; cost += line; }
+        h += `<tr><td>${it.qty}</td><td>${esc(it.p.n)}</td><td class="ital">${esc(it.p.s||'')}</td>
+          <td>${sp} ft</td><td>${esc(it.p.ht||'—')}</td>
+          <td class="num">${it.price?'$'+it.price.toFixed(2):'—'}</td>
+          <td class="num">${it.price?'$'+line.toFixed(2):'—'}</td></tr>`;
+      }
+      h += `</table>`;
+    }
+    h += `<h2>Materials</h2><table class="rep-t">
+      <tr><td>Plants</td><td>${count}</td></tr>
+      <tr><td>Bed area covered</td><td>${mulch.toFixed(0)} ft²</td></tr>
+      <tr><td>Mulch at 3 in depth</td><td>${(mulch*0.25/27).toFixed(1)} yd³</td></tr>
+      ${priced?`<tr><td><b>Plant material subtotal</b></td><td><b>$${cost.toFixed(2)}</b></td></tr>`:''}
+    </table>${priced?`<p class="rep-note">Subtotal covers plant material only. Labour, soil amendment, edging, irrigation and delivery are not included.</p>`:''}`;
+  }
+
+  if (m.notes) h += `<h2>Notes</h2><p>${esc(m.notes).replace(/\n/g,'<br>')}</p>`;
+
+  h += `<h2>Basis and limitations</h2>
+    <p class="rep-note">Sun position is calculated astronomically from the property's latitude and longitude using the NOAA solar position algorithm; that part is exact.
+    Shadow geometry is only as good as the heights and positions entered for buildings and trees, which were supplied by the preparer, not surveyed.
+    The model assumes level ground and does not account for roof overhangs, terrain, reflected light, or anything not drawn on the plan.
+    Hardiness zone is estimated from latitude and should be confirmed against the USDA map.
+    Plant records marked as imported carry no verified data on native status, deer resistance or toxicity.</p>
+    <p class="rep-note">This document is a planning aid. It is not a survey, an architectural or engineering drawing, an energy model, or a substitute for professional horticultural advice.</p>
+    <div class="rep-foot">${esc(co.name||'')} · Prepared ${today} · Solar analysis by Ecliptic</div>`;
+  return h;
+}
+
+/* ── PROJECTS OVERLAY ── */
+function openProjects(){
+  const co = Projects.company(), m = Projects.meta, all = Projects.list();
+  $('#projBody').innerHTML = `
+    <div class="eyebrow mono">This job</div>
+    <div class="slab">
+      <div class="minirow"><div><label>Project name</label><input type="text" data-m="name" value="${esc(m.name||Property.label()||'')}"></div></div>
+      <div class="minirow"><div><label>Client</label><input type="text" data-m="client" value="${esc(m.client||'')}"></div></div>
+      <div class="minirow"><div><label>Notes for the report</label><input type="text" data-m="notes" value="${esc(m.notes||'')}"></div></div>
+      <div class="split" style="margin-top:12px">
+        <button class="btn" id="saveProj" style="margin-top:0">${Projects.current?'Save':'Save project'}</button>
+        <button class="btn ghost" id="saveAs" style="margin-top:0">Save as new</button>
+      </div>
+    </div>
+    <div class="split"><button class="btn ghost" id="expProj" style="margin-top:0">Export file</button>
+      <button class="btn ghost" id="impProj" style="margin-top:0">Import file</button></div>
+    <input type="file" id="projFile" accept=".json" style="display:none">
+
+    <div style="margin-top:24px" class="eyebrow mono">Saved jobs · ${all.length}</div>
+    ${all.length ? all.map(p => `<div class="obj">
+        <div class="bd"><b>${esc(p.name)}</b>
+          <div class="sub">${esc([p.client, (p.property.address&&p.property.address.city)||'', new Date(p.updated).toLocaleDateString()].filter(Boolean).join(' · '))}</div>
+          <div class="sub">${(p.plan||[]).reduce((a,x)=>a+x.qty,0)} plants · ${(p.site.objects||[]).length} objects${p.id===Projects.current?' · open':''}</div></div>
+        <button class="x" data-po="${p.id}" title="Open">↗</button>
+        <button class="x" data-pd="${p.id}" title="Duplicate">⧉</button>
+        <button class="x" data-px="${p.id}" title="Delete">✕</button>
+      </div>`).join('')
+      : `<p class="conf">Nothing saved yet. Saving keeps the property, everything you have placed on it, the interior rooms and the planting schedule.</p>`}
+
+    <div style="margin-top:24px" class="eyebrow mono">Your company</div>
+    <p class="conf" style="border:none;padding-top:0;margin-top:0">Printed at the top of every client report.</p>
+    <div class="slab">
+      <div class="minirow"><div><label>Company</label><input type="text" data-c="name" value="${esc(co.name)}"></div></div>
+      <div class="minirow"><div><label>Tagline</label><input type="text" data-c="tagline" value="${esc(co.tagline)}"></div></div>
+      <div class="minirow">
+        <div><label>Phone</label><input type="text" data-c="phone" value="${esc(co.phone)}"></div>
+        <div><label>Email</label><input type="text" data-c="email" value="${esc(co.email)}"></div>
+      </div>
+      <div class="minirow"><div><label>License number</label><input type="text" data-c="license" value="${esc(co.license)}"></div></div>
+    </div>
+    <p class="conf">Saved in this browser (${Store.backend}). Export a file for anything you cannot afford to lose — clearing site data wipes browser storage.</p>`;
+  $('#projects').classList.remove('hide');
+  wireProjects();
+}
+function wireProjects(){
+  document.querySelectorAll('[data-m]').forEach(el => el.addEventListener('input', () => {
+    const m = Object.assign({}, Projects.meta); m[el.dataset.m] = el.value; Projects.meta = m; }));
+  document.querySelectorAll('[data-c]').forEach(el => el.addEventListener('input', () => {
+    const c = Projects.company(); c[el.dataset.c] = el.value; Projects.setCompany(c); }));
+  $('#saveProj').addEventListener('click', () => { Projects.save(Projects.meta); openProjects(); flash('Saved'); });
+  $('#saveAs').addEventListener('click', () => { Projects.current = null; Projects.save(Projects.meta); openProjects(); flash('Saved as new'); });
+  $('#expProj').addEventListener('click', () => {
+    const snap = Projects.capture(Projects.meta);
+    const blob = new Blob([JSON.stringify(snap, null, 2)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (snap.name || 'project').replace(/[^\w-]+/g,'-').toLowerCase() + '.ecliptic.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+  $('#impProj').addEventListener('click', () => $('#projFile').click());
+  $('#projFile').addEventListener('change', e => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = () => {
+      try {
+        const p = JSON.parse(r.result);
+        if (!p.property || !p.site) throw new Error('not an Ecliptic project file');
+        Projects.current = null; Projects.hydrate(p);
+        closeProjects(); afterLoad(); flash('Imported ' + (p.name||'project'));
+      } catch(err){ flash('Could not read that file: ' + err.message); }
+    };
+    r.readAsText(f);
+  });
+  document.querySelectorAll('[data-po]').forEach(el => el.addEventListener('click', () => {
+    if (Projects.open(el.dataset.po)){ closeProjects(); afterLoad(); }
+  }));
+  document.querySelectorAll('[data-pd]').forEach(el => el.addEventListener('click', () => { Projects.duplicate(el.dataset.pd); openProjects(); }));
+  document.querySelectorAll('[data-px]').forEach(el => el.addEventListener('click', () => {
+    if (confirm('Delete this job? This cannot be undone.')){ Projects.remove(el.dataset.px); openProjects(); }
+  }));
+}
+const closeProjects = () => $('#projects').classList.add('hide');
+function flash(msg){
+  const f = $('#flash'); f.textContent = msg; f.classList.remove('hide');
+  clearTimeout(flash._t); flash._t = setTimeout(() => f.classList.add('hide'), 2200);
+}
+/* rebuild the workspace after opening or importing a job */
+function afterLoad(){
+  $('#landing').classList.add('hide');
+  $('#work').classList.remove('hide');
+  initMap(S.lat, S.lon, 20);
+  $('#waddr').textContent = Projects.meta.name || Property.label();
+  $('#wsub').textContent = Property.sub() || `${S.lat.toFixed(4)}, ${S.lon.toFixed(4)}`;
+  $('#wzone').textContent = 'Zone ' + S.zoneLabel;
+  drawObjects(); drawPlan(); computeAnalysis();
+  S.tab = 'yard'; syncTabs(); renderTab(); updateSun();
+  setTimeout(() => map.invalidateSize(), 200);
+}
+function printReport(){
+  $('#report').innerHTML = buildReport();
+  document.body.classList.add('printing');
+  setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove('printing'), 400); }, 60);
+}
+
+/* ── PLANTS ── */
+const PREFLBL = {native:'Native',deer:'Deer resistant',poll:'Pollinators',drought:'Drought tolerant',
+  evergreen:'Evergreen',lowmaint:'Low maintenance',pets:'Pet safe'};
+function tabPlants(){
+  if (S.selPlant) return plantDetail(S.selPlant);
+  const c = PlantData.counts;
+  const search = `<div class="field" style="margin-bottom:4px">
+      <label class="mono" for="pq">Search ${c.curated + c.imported} plants</label>
+      <input id="pq" type="text" value="${esc(S.query||'')}" placeholder="hydrangea · native shrub · shade, evergreen · zone 7"
+        autocomplete="off" autocorrect="off" spellcheck="false"
+        style="width:100%;border:1px solid var(--line);border-radius:2px;padding:12px;background:#fff">
+    </div>
+    <p class="conf" style="border:none;padding-top:0;margin-top:6px">Combine terms with commas: <span class="mono">native, shade, shrub</span></p>
+    ${c.imported ? `<p class="conf" style="border:none;padding-top:0;margin-top:2px">Full library loaded — ${c.imported} imported plants plus ${c.curated} hand-checked.</p>`
+      : `<div class="warn" style="margin-top:10px"><b>Only the built-in ${c.curated} plants are loaded</b>
+          The full library lives in <span class="mono">plants.json</span>. It loads automatically when this page is served from a web address, but browsers block local file reads when you open the HTML directly from your computer.
+          <button class="btn ghost" id="loadDb" style="margin-top:10px;padding:10px;font-size:.85rem">Choose plants.json manually</button>
+          <input type="file" id="dbFile" accept=".json,application/json" style="display:none">
+         </div>`}
+    <div id="searchOut"></div>`;
+  if (S.query && S.query.trim()) return search;
+  if (!S.spotData) return search + `<div class="empty" style="padding-top:24px"><h3 class="serif">Pick a spot to plant</h3>
+    <p>Tap anywhere on the map — a bed, a corner, the strip along the driveway — and Ecliptic will report that exact square metre's sun through the year, then match plants to it.</p>
+    <p style="margin-top:14px;font-size:.88rem;color:var(--muted-l)">Or open the Yard tab and choose one of the planting zones around the house.</p></div>`;
+  const d = S.spotData;
+  const mn = ['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const mx = Math.max(...d.months, 1);
+  let h = search + `<div class="eyebrow mono" style="margin-top:18px">${esc(d.name || 'Selected spot')}</div>
+    <div style="display:flex;align-items:flex-end;gap:14px;margin-bottom:4px">
+      <div class="big-num">${h1(d.grow)}<span style="font-size:1rem;font-family:'Inter Tight'"> hrs</span></div>
+      <div style="padding-bottom:6px"><b style="color:var(--gold)">${esc(d.seasonal)}</b>
+      <div class="mono" style="color:var(--muted-l)">Apr–Sep daily average</div></div>
+    </div>
+    <div style="display:flex;gap:3px;align-items:flex-end;height:64px;margin:16px 0 6px">
+      ${d.months.map((v,i)=>`<div style="flex:1;height:${Math.max(3,v/mx*100)}%;background:${SUNCOL[v>=6?0:v>=4?1:v>=2?2:3]};border-radius:1px" title="${mn[i]}: ${h1(v)} hrs"></div>`).join('')}
+    </div>
+    <div style="display:flex;gap:3px" class="mono">${mn.map(m=>`<div style="flex:1;text-align:center;color:var(--muted-l)">${m}</div>`).join('')}</div>
+    <div class="slab" style="margin-top:16px">
+      <div class="rowline"><span class="k">Summer</span><span class="v">${h1(d.summer)} hrs</span></div>
+      <div class="rowline"><span class="k">Spring</span><span class="v">${h1(d.spring)} hrs</span></div>
+      <div class="rowline"><span class="k">Fall</span><span class="v">${h1(d.fall)} hrs</span></div>
+      <div class="rowline"><span class="k">Winter</span><span class="v">${h1(d.winter)} hrs</span></div>
+    </div>
+    <div style="margin-top:22px" class="eyebrow mono">What belongs in this spot</div>
+    <div class="slab"><b style="font-weight:500">${esc(categoryAdvice(d))}</b></div>
+
+    <div style="margin-top:20px" class="eyebrow mono">Lawn</div>
+    ${lawnBlock(d)}
+
+    <div class="ctlrow"><label><span class="mono">Soil here</span></label>
+      <div class="presets">${[['dry','Dry / sandy'],['avg','Average'],['moist','Moist / low']].map(([v,l])=>
+        `<button class="pill" data-soil="${v}" aria-pressed="${S.soil===v}">${l}</button>`).join('')}</div></div>
+    <div class="ctlrow"><label><span class="mono">Plant types</span></label>
+      <div class="presets">${TYPES.filter(t=>t!=='vegetable').map(t=>
+        `<button class="pill" data-type="${t}" aria-pressed="${!S.types || S.types.has(t)}">${TYPE_LABEL[t]}</button>`).join('')}
+        <button class="pill" data-type="vegetable" aria-pressed="${!!(S.types && S.types.has('vegetable'))}">Vegetables</button></div></div>
+    <div class="ctlrow"><label><span class="mono">What matters to you</span></label>
+      <div class="presets">${Object.keys(PREFLBL).map(k=>
+        `<button class="pill" data-pref="${k}" aria-pressed="${S.prefs[k]}">${PREFLBL[k]}</button>`).join('')}</div></div>`;
+
+  const recs = Recommend.forSpot(d, S.zone, S.soil, S.prefs, S.types);
+  h += `<div style="margin-top:20px" class="eyebrow mono">${recs.length} of ${c.curated + c.imported} plants matched · best first</div>`;
+  if (Object.values(S.prefs).some(Boolean) && c.imported)
+    h += `<p class="conf" style="margin-top:0">Filters like native, deer-resistant and pet-safe only apply to the ${c.curated} hand-checked records — the imported dataset does not publish those fields, so those plants are held back rather than guessed at.</p>`;
+  if (!recs.length) h += `<div class="empty"><p>Nothing scored well with those filters. Turn a couple off, or pick a different spot.</p></div>`;
+  for (const {p,s} of recs.slice(0,26)){
+    h += `<div class="pcard">
+      <div class="hd"><div class="nm"><h3>${esc(p.n)}</h3><div class="sci">${esc(p.s)}</div></div>
+        <div class="score"><b>${s}%</b><span>Match</span></div></div>
+      <div class="facts">
+        <span><i>☀</i>${p.sun[1]>=12?p.sun[0]+'+ hrs sun':p.sun[0]+'–'+p.sun[1]+' hrs sun'}</span>
+        <span><i>↕</i>${esc(p.ht)}</span>
+        <span><i>↔</i>${esc(p.wd)}</span>
+        <span><i>❋</i>${esc(p.bloom)}</span>
+        <span><i>◷</i>${esc(p.maint)} upkeep</span>
+        <span><i>▣</i>Zones ${p.z[0]}–${p.z[1]}</span>
+      </div>
+      <div class="why"><b>Why it works here</b>${esc(Recommend.why(d, S.zone, S.soil, p))} ${esc(p.note||'')}
+        <div class="mono" style="margin-top:8px;color:var(--muted-l)">${p.src === 'curated' ? 'Hand-checked record'
+          : p.url ? `Source: <a href="${esc(p.url)}" target="_blank" rel="noopener" style="color:var(--gold)">${esc(p.srcLabel||'dataset')}</a>` : 'Imported record, unverified'}</div>
+        ${p.tox?`<div style="margin-top:7px;color:#9C3B2E">⚠ ${esc(p.tox)}.</div>`:''}</div>
+      <div class="act"><button data-plant="${esc(p.n)}">Add to my plan</button></div>
+    </div>`;
+  }
+  return h;
+}
+/* Section 52: recommend the category, not just plants inside one. */
+function categoryAdvice(d){
+  const g = d.grow, w = d.winter;
+  if (g >= 6 && w >= 4) return 'Full sun year round — lawn, sun perennials, fruiting shrubs and small ornamental trees all work here.';
+  if (g >= 6) return 'Full sun in the growing season but shaded in winter. Fine for lawn and summer perennials; a poor spot for evergreens, which need winter light.';
+  if (g >= 4) return 'Part sun. Shade-tolerant turf will hold on, but this spot suits flowering shrubs and perennials better than a lawn.';
+  if (g >= 2) return 'Part shade. Skip the grass. Woodland shrubs, ferns, and groundcovers are the right answer here.';
+  return 'Deep shade. Nothing here will carry flowers or turf. Plan on foliage — groundcover, ferns, and evergreen shade shrubs — or hardscape and mulch.';
+}
+function lawnBlock(d){
+  if (d.grow < 3){
+    return `<div class="warn"><b>Grass will struggle here</b>This spot averages ${h1(d.grow)} hours of direct sun through the growing season.
+      Below about three hours, turf thins out, stays wet, and loses to moss and weeds no matter which species you sow.
+      A groundcover, a mulched bed, or a shade garden will look better and cost less to keep.</div>`;
+  }
+  const r = TurfDB.forSpot(d.grow, d.winter, S.zone);
+  if (!r.length) return `<div class="warn"><b>No turf listed for zone ${esc(S.zoneLabel)}</b>Set your hardiness zone on the start screen if it looks wrong.</div>`;
+  const n = TurfDB.note(S.zone, d.grow);
+  let h = n ? `<p class="note" style="margin-bottom:12px">${esc(n)}</p>` : '';
+  if (d.grow < 5) h += `<div class="warn"><b>Marginal for turf</b>At ${h1(d.grow)} hours this is thin-lawn territory. Expect to overseed most years.</div>`;
+  for (const {g,s} of r.slice(0,4)){
+    h += `<div class="pcard"><div class="hd"><div class="nm"><h3>${esc(g.n)}</h3><div class="sci">${esc(g.s)}</div></div>
+      <div class="score"><b>${s}%</b><span>Match</span></div></div>
+      <div class="facts">
+        <span><i>◷</i>${esc(g.season)} season</span><span><i>☀</i>Wants ${g.sunMin}+ h</span>
+        <span><i>✂</i>Mow ${esc(g.mow)}</span><span><i>💧</i>${esc(g.water)} water</span>
+        <span><i>▣</i>Zones ${g.z[0]}–${g.z[1]}</span><span><i>◈</i>${esc(g.estab)}</span>
+      </div>
+      <div class="why"><b>Why here</b>This spot averages ${h1(d.grow)} hours of direct sun in the growing season and ${esc(g.n)} wants at least ${g.sunMin}.
+        ${S.zone >= g.z[0] && S.zone <= g.z[1] ? `Zone ${esc(S.zoneLabel)} is inside its range.` : `Zone ${esc(S.zoneLabel)} is outside its usual ${g.z[0]}–${g.z[1]} range, so expect winter damage.`}
+        ${esc(g.dormancy)}. ${esc(g.note)}</div></div>`;
+  }
+  return h;
+}
+
+function wirePlants(){
+  const pq = $('#pq');
+  if (pq){
+    let t;
+    pq.addEventListener('input', e => { S.query = e.target.value;
+      clearTimeout(t); t = setTimeout(renderSearch, 140); });
+    renderSearch();
+  }
+  const ld = $('#loadDb'), df = $('#dbFile');
+  if (ld && df){
+    ld.addEventListener('click', () => df.click());
+    df.addEventListener('change', () => {
+      const f = df.files && df.files[0]; if (!f) return;
+      const r = new FileReader();
+      r.onload = () => {
+        try {
+          const n = PlantData.ingest(JSON.parse(r.result));
+          ld.textContent = `Loaded ${n} plants`;
+          setTimeout(renderTab, 500);
+        } catch(e){ ld.textContent = 'That file could not be read: ' + e.message; }
+      };
+      r.readAsText(f);
+    });
+  }
+  document.querySelectorAll('[data-pickzone]').forEach(el => el.addEventListener('click', () => {
+    if (selectZone(el.dataset.pickzone)) renderTab();
+  }));
+  const ap = $('#addPlan');
+  if (ap) ap.addEventListener('click', () => {
+    if (addToPlan(S.selPlant)){ ap.textContent = 'Added ✓'; setTimeout(renderTab, 650); }
+  });
+  const bs = $('#backSearch');
+  if (bs) bs.addEventListener('click', () => { S.selPlant = null; renderTab(); });
+  document.querySelectorAll('[data-type]').forEach(el => el.addEventListener('click', () => {
+    if (!S.types) S.types = new Set(TYPES.filter(t => t !== 'vegetable'));
+    const t = el.dataset.type;
+    S.types.has(t) ? S.types.delete(t) : S.types.add(t);
+    renderTab();
+  }));
+  document.querySelectorAll('[data-soil]').forEach(el => el.addEventListener('click', () => { S.soil = el.dataset.soil; renderTab(); }));
+  document.querySelectorAll('[data-pref]').forEach(el => el.addEventListener('click', () => {
+    S.prefs[el.dataset.pref] = !S.prefs[el.dataset.pref]; renderTab();
+  }));
+  document.querySelectorAll('[data-plant]').forEach(el => el.addEventListener('click', () => {
+    const p = PlantData.all().find(x => x.n === el.dataset.plant); if (!p) return;
+    const ex = S.plan.find(x => x.p.n === p.n && x.zone === (S.spotData.name || 'Selected spot'));
+    if (ex) ex.qty++;
+    else S.plan.push({p, qty:1, zone:S.spotData.name || 'Selected spot',
+      lat:S.spot.lat, lng:S.spot.lng, hrs:S.spotData.grow});
+    if (p.t === 'tree' && S.spot){
+      S.objects.push({id:'p'+(Date.now()%1e6), type:'tree', name:p.n+' (planned)',
+        lat:S.spot.lat, lng:S.spot.lng, r:M(1.5), h:M(6), deciduous: p.ev?0:1,
+        growth:0.4, matureH:M(parseFt(p.ht)), matureR:M(parseFt(p.wd))/2, planned:true});
+      drawObjects(); computeAnalysis();
+    }
+    drawPlan();
+    el.textContent = 'Added ✓'; setTimeout(()=>{ el.textContent = 'Add to my plan'; }, 1100);
+  }));
+}
+function drawPlan(){
+  if (!planL) return;
+  planL.clearLayers();
+  for (const it of S.plan){
+    L.circle([it.lat, it.lng], {radius: M(parseFt(it.p.wd || '3 ft'))/2, color:'#2E5B41', weight:1.4,
+      dashArray:'3 4', fillColor:'#2E5B41', fillOpacity:.1, interactive:false}).addTo(planL);
+  }
+}
+
+/* ── PLAN ── */
+function tabPlan(){
+  if (!S.plan.length) return `<div class="empty"><h3 class="serif">Your next landscape starts here</h3>
+    <p>Add plants from the Plants tab and they'll collect here as a planting list with spacing, quantities and materials.</p></div>`;
+  const byZone = {};
+  for (const it of S.plan) (byZone[it.zone] ||= []).push(it);
+  let h = `<div class="eyebrow mono">Planting plan</div>`;
+  const warns = [];
+  for (const it of S.plan){
+    if (it.p.t !== 'tree') continue;
+    const [px,py] = Geo.xy(it.lat, it.lng);
+    for (const o of S.objects.filter(o => o.type === 'building')){
+      const [bx,by] = Geo.xy(o.lat, o.lng);
+      const need = parseFt(it.p.wd || '20 ft')/2 + 10, got = FT(Math.hypot(px-bx, py-by)) - FT(Math.max(o.w,o.d))/2;
+      if (got < need) warns.push(`<b>${esc(it.p.n)} is close to the ${esc(o.name.toLowerCase())}</b>
+        Its mature canopy spreads about ${parseFt(it.p.wd || '20 ft').toFixed(0)} ft. Allow roughly ${need.toFixed(0)} ft of clearance from the wall — this spot has about ${Math.max(0,got).toFixed(0)} ft.`);
+    }
+  }
+  for (const w of warns) h += `<div class="warn">⚠ ${w}</div>`;
+  if (S.plan.some(it => it.p.t === 'tree'))
+    h += `<div class="warn"><b>Planned trees are in the shadow model</b>Open the Yard tab and switch to 5, 10 or 20 years to see how they will shade the rest of the yard as they grow.</div>`;
+
+  let mulch = 0, count = 0;
+  for (const z in byZone){
+    h += `<div style="margin-top:18px" class="eyebrow mono">${esc(z)}</div>`;
+    for (const it of byZone[z]){
+      const sp = it.p.sp || Math.max(1, parseFt(it.p.wd || '3 ft'));
+      mulch += it.qty * Math.PI * Math.pow(sp/2, 2); count += it.qty;
+      h += `<div class="obj"><div class="ic">${it.qty}×</div><div class="bd">
+        <b>${esc(it.p.n)}</b><div class="sub">Space ${sp} ft apart · mature ${esc(it.p.ht||'size not recorded')}${it.p.wd?' tall, '+esc(it.p.wd)+' wide':''}</div></div>
+        <button class="x" data-inc="${esc(it.p.n)}|${esc(z)}">+</button>
+        <button class="x" data-dec="${esc(it.p.n)}|${esc(z)}">−</button></div>
+        <div class="minirow" style="margin:-4px 0 8px 42px"><div style="max-width:150px">
+          <label>Unit price</label><input type="number" step="0.01" min="0" placeholder="—"
+            data-price="${esc(it.p.n)}|${esc(z)}" value="${it.price ?? ''}"></div></div>`;
+    }
+  }
+  const mulchYd = (mulch*0.25/27).toFixed(1);   // 3 in depth, sq ft → cubic yards
+  h += `<div class="slab" style="margin-top:20px">
+    <div class="rowline"><span class="k">Plants</span><span class="v">${count}</span></div>
+    <div class="rowline"><span class="k">Mulch at 3 in</span><span class="v">${mulchYd} yd³</span></div>
+    <div class="rowline"><span class="k">Bed area covered</span><span class="v">${mulch.toFixed(0)} ft²</span></div>
+  </div>
+  <p class="conf">Quantities are derived from each plant's recommended spacing and mature width. Prices vary far too much by region and season for an estimate here to be worth anything.</p>
+  ${(() => { const t = S.plan.reduce((a,x) => a + (x.price ? x.price * x.qty : 0), 0);
+      return t ? `<div class="slab"><div class="rowline"><span class="k">Plant material subtotal</span><span class="v">$${t.toFixed(2)}</span></div>
+        <p class="conf" style="border:none;padding-top:6px;margin:0">Plant material only. Labour, soil, edging, irrigation and delivery excluded.</p></div>` : ''; })()}
+  <button class="btn" id="reportBtn">Client report</button>
+  <div class="split" style="margin-top:10px">
+    <button class="btn ghost" id="printBtn" style="margin-top:0">Print list</button>
+    <button class="btn ghost" id="clearBtn" style="margin-top:0">Clear</button>
+  </div>
+  <div style="margin-top:26px" class="eyebrow mono">Data confidence</div>
+  <div class="slab">
+    <div class="rowline"><span class="k">Sun position</span><span class="v">Calculated · very high</span></div>
+    <div class="rowline"><span class="k">Property location</span><span class="v">Public geocode · high</span></div>
+    <div class="rowline"><span class="k">Building footprint</span><span class="v">You entered it</span></div>
+    <div class="rowline"><span class="k">Building &amp; tree heights</span><span class="v">You entered them</span></div>
+    <div class="rowline"><span class="k">Hardiness zone</span><span class="v">Estimated from latitude</span></div>
+    <div class="rowline"><span class="k">Soil</span><span class="v">You selected it</span></div>
+    <div class="rowline"><span class="k">Terrain / slope</span><span class="v">Not modelled</span></div>
+  </div>
+  <p class="conf"><b>What this model does not know.</b> It assumes level ground, ignores roof overhangs and reflected light,
+  treats every tree canopy as a solid disc, and cannot see anything you have not drawn — including your neighbour's oak.
+  The zone estimate is a latitude fit and is unreliable on the Pacific coast and at elevation; check the USDA map and correct it if needed.</p>`;
+  return h;
+}
+function wirePlan(){
+  const upd = (key, dir) => {
+    const [n,z] = key.split('|');
+    const it = S.plan.find(x => x.p.n === n && x.zone === z); if (!it) return;
+    it.qty += dir;
+    if (it.qty <= 0) S.plan = S.plan.filter(x => x !== it);
+    drawPlan(); renderTab();
+  };
+  document.querySelectorAll('[data-inc]').forEach(el => el.addEventListener('click', () => upd(el.dataset.inc, 1)));
+  document.querySelectorAll('[data-dec]').forEach(el => el.addEventListener('click', () => upd(el.dataset.dec, -1)));
+  document.querySelectorAll('[data-price]').forEach(el => el.addEventListener('change', () => {
+    const [n,z] = el.dataset.price.split('|');
+    const it = S.plan.find(x => x.p.n === n && x.zone === z);
+    if (it){ it.price = el.value === '' ? null : Math.max(0, +el.value); renderTab(); }
+  }));
+  const rb = $('#reportBtn'); if (rb) rb.addEventListener('click', printReport);
+  const p = $('#printBtn'); if (p) p.addEventListener('click', () => window.print());
+  const c = $('#clearBtn'); if (c) c.addEventListener('click', () => {
+    S.plan = []; S.objects = S.objects.filter(o => !o.planned);
+    drawPlan(); drawObjects(); computeAnalysis(); renderTab();
+  });
+}
+
+/* ─────────────── BOOT & CHROME ─────────────── */
+function syncTabs(){
+  document.querySelectorAll('.tabs button').forEach(b =>
+    b.setAttribute('aria-selected', String(b.dataset.tab === S.tab)));
+}
+document.querySelectorAll('.tabs button').forEach(b => b.addEventListener('click', () => {
+  S.tab = b.dataset.tab; syncTabs(); renderTab();
+  $('#sheet').classList.remove('small');
+}));
+$('#tSat').addEventListener('click', () => {
+  S.layers.sat = !S.layers.sat;
+  $('#tSat').setAttribute('aria-pressed', String(S.layers.sat));
+  $('#tSat').textContent = S.layers.sat ? 'Aerial' : 'Map';
+  if (S.layers.sat){ map.removeLayer(litL); satL.addTo(map); } else { map.removeLayer(satL); litL.addTo(map); }
+  drawHeat();
+});
+$('#tShadow').addEventListener('click', () => {
+  S.layers.shadow = !S.layers.shadow;
+  $('#tShadow').setAttribute('aria-pressed', String(S.layers.shadow)); drawShadows();
+});
+$('#tHeat').addEventListener('click', () => {
+  S.layers.heat = !S.layers.heat;
+  $('#tHeat').setAttribute('aria-pressed', String(S.layers.heat)); drawHeat();
+});
+$('#projBtn').addEventListener('click', openProjects);
+$('#projClose').addEventListener('click', closeProjects);
+$('#projects').addEventListener('click', e => { if (e.target.id === 'projects') closeProjects(); });
+$('#go').addEventListener('click', () => runSearch($('#addr').value));
+$('#go2').addEventListener('click', () => { $('#landing').scrollTo({top:0, behavior:'smooth'}); $('#addr').focus(); });
+$('#addr').addEventListener('keydown', e => { if (e.key === 'Enter'){ e.preventDefault(); runSearch($('#addr').value); } });
+// 1.1 s debounce keeps us inside the Nominatim one-request-per-second policy
+$('#addr').addEventListener('input', e => { clearTimeout(searchTimer); const v = e.target.value; searchTimer = setTimeout(() => runSearch(v), 1100); });
+$('#useLoc').addEventListener('click', useMyLocation);
+$('#dropPin').addEventListener('click', useMyLocation);
+$('#confirmLoc').addEventListener('click', confirmLocation);
+$('#reSearch').addEventListener('click', () => { $('#locateBar').classList.add('hide');
+  if (locateM){ map.removeLayer(locateM); locateM = null; }
+  $('#work').classList.add('hide'); $('#landing').classList.remove('hide'); $('#addr').focus(); });
+$('#demoTime').addEventListener('input', drawDemo);
+
+/* bottom-sheet drag */
+(() => {
+  const sh = $('#sheet'), gb = $('#grab'); let y0 = 0, h0 = 0, on = false;
+  gb.addEventListener('pointerdown', e => { on = true; y0 = e.clientY; h0 = sh.offsetHeight; gb.setPointerCapture(e.pointerId); sh.style.transition = 'none'; });
+  gb.addEventListener('pointermove', e => {
+    if (!on) return;
+    const h = clamp(h0 - (e.clientY - y0), 100, window.innerHeight*0.85);
+    sh.style.height = h + 'px';
+  });
+  gb.addEventListener('pointerup', () => { on = false; sh.style.transition = ''; setTimeout(()=>map && map.invalidateSize(), 320); });
+})();
+
+S.types = new Set(TYPES.filter(t => t !== 'vegetable'));
+
+/* every tab in the bar must resolve to a view; fail loudly at load, not on tap */
+(() => {
+  const missing = [...document.querySelectorAll('.tabs button')].map(b => b.dataset.tab)
+    .filter(t => typeof ({sun:tabSun, yard:tabYard, site:tabSite, indoor:tabIndoor,
+                          plants:tabPlants, plan:tabPlan})[t] !== 'function');
+  if (missing.length) console.error('Ecliptic: tabs with no view function:', missing);
+})();
+
+drawDemo(); demoHours();
+
+/* load the bulk dataset if it is sitting next to this file; the app works
+   without it, just with fewer plants */
+PlantData.tryLoad().then(n => {
+  if (n && S.tab === 'plants') renderTab();
+});
+</script>
+</body>
+</html>
